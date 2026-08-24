@@ -1,0 +1,57 @@
+# Publish the page to GitHub Pages.
+#
+# There is no build. The browser reads ui.html and pulls its modules in with
+# import(), which is all a static host has to serve -- so the job copies files
+# and stops. Anything that once bundled them into one has been deleted.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:      # lets you redeploy from the Actions tab by hand
+
+# GITHUB_TOKEN needs to be allowed to publish the artifact.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; keep the newer one, let the older finish first
+# rather than cancelling a publish half-way.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble the site
+        run: |
+          mkdir -p _site
+          cp ui.html _site/index.html
+          cp catalog.js pad-wire.js pad-model.js pad-driver.js _site/
+          touch _site/.nojekyll
+
+      - name: Check the site is complete
+        run: |
+          for f in index.html catalog.js pad-wire.js pad-model.js pad-driver.js; do
+            test -s "_site/$f" || { echo "missing or empty: $f"; exit 1; }
+          done
+          ls -l _site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

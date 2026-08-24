@@ -1,0 +1,2748 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%234c8dff%27/%3E%3Cg fill=%27%23fff%27%3E%3Crect x=%277%27 y=%277%27 width=%277%27 height=%277%27 rx=%271.6%27/%3E%3Crect x=%2718%27 y=%277%27 width=%277%27 height=%277%27 rx=%271.6%27/%3E%3Crect x=%277%27 y=%2718%27 width=%277%27 height=%277%27 rx=%271.6%27/%3E%3Ccircle cx=%2721.5%27 cy=%2721.5%27 r=%273.9%27/%3E%3C/g%3E%3C/svg%3E">
+<title>MiniKeyboard</title>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#181b21; --panel2:#20242c; --line:#2e3440;
+    --fg:#e7eaf0; --dim:#8d95a6; --accent:#4a9eff; --accent2:#2b6fd0;
+    --ok:#3ddc84; --err:#ff7a7a; --warn:#ffc46b;
+    --case:#3a3d44; --case2:#2c2f35; --metal:#c9ccd1; --metal2:#9aa0a8;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font:14px/1.5 "Segoe UI",system-ui,sans-serif}
+  header{display:flex;align-items:center;gap:14px;padding:11px 20px;
+         background:var(--panel);border-bottom:1px solid var(--line)}
+  h1{font-size:15px;margin:0;font-weight:600}
+  .grow{flex:1}
+  button{background:var(--panel2);color:var(--fg);border:1px solid var(--line);
+         border-radius:7px;padding:8px 14px;cursor:pointer;font-size:13px}
+  button:hover{border-color:var(--accent);color:#fff}
+  button.primary{background:var(--accent2);border-color:var(--accent2)}
+  button.primary:hover{background:var(--accent)}
+  button.on{background:var(--accent2);border-color:var(--accent);color:#fff}
+  .wrap{max-width:1240px;margin:0 auto;padding:22px}
+
+  /* ================= device ================= */
+  .device{background:linear-gradient(160deg,var(--case),var(--case2));
+          border-radius:20px;padding:28px 34px;display:flex;gap:40px;
+          box-shadow:inset 0 1px 0 #ffffff12,0 10px 30px #0009;
+          position:relative;align-items:flex-start}
+  /* Static tint, not a pulse. */
+  .device.animated{box-shadow:inset 0 1px 0 #ffffff12,0 10px 30px #0009,
+                   0 0 34px -6px #4a9eff40}
+  .screws{position:absolute;inset:12px;pointer-events:none}
+  .screws i{position:absolute;width:9px;height:9px;border-radius:50%;
+            background:radial-gradient(circle at 35% 35%,#7b8089,#40444b)}
+  .screws i:nth-child(1){left:0;top:0}   .screws i:nth-child(2){right:0;top:0}
+  .screws i:nth-child(3){left:0;bottom:0}.screws i:nth-child(4){right:0;bottom:0}
+
+  .keys{display:grid;grid-template-columns:repeat(4,96px);
+        grid-auto-rows:86px;gap:12px}
+  .key{position:relative;border-radius:10px;cursor:pointer;
+       border:1px solid #00000045;padding:6px;
+       display:flex;flex-direction:column;align-items:center;
+       justify-content:center;transition:transform .05s;
+       box-shadow:0 3px 5px #0007,inset 0 1px 0 #ffffff30}
+  .key:hover{filter:brightness(1.12)}
+  .key:active{transform:translateY(1px)}
+  .key.sel{outline:3px solid var(--accent);outline-offset:2px}
+  .key .n{position:absolute;top:3px;left:7px;font-size:10px;opacity:.6}
+  .key .lab{font-size:12px;font-weight:700;text-align:center;line-height:1.2;
+            word-break:break-word;max-height:3.6em;overflow:hidden}
+  .key .cnt{position:absolute;top:3px;right:7px;font-size:10px;opacity:.7}
+
+  .knobs{display:flex;flex-direction:column;gap:22px;align-items:center;
+         padding-top:4px}
+  .knobrow{display:flex;gap:34px}
+  .knobwrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .knobname{font-size:11px;color:#cfd4dc;font-weight:600}
+  .knobline{display:flex;align-items:center;gap:8px}
+  .knob{position:relative;border-radius:50%;cursor:pointer;
+        background:radial-gradient(circle at 38% 32%,#eef0f2,var(--metal) 46%,
+                   var(--metal2));
+        border:1px solid #7e838b;box-shadow:0 4px 8px #0008;
+        display:flex;align-items:center;justify-content:center;
+        transition:transform .05s}
+  .knob::after{content:"";position:absolute;inset:24%;border-radius:50%;
+        background:repeating-conic-gradient(#0000 0 6deg,#00000012 6deg 12deg);
+        box-shadow:inset 0 0 7px #0003}
+  .knob:hover{filter:brightness(1.06)}
+  .knob:active{transform:translateY(1px)}
+  .knob.s{width:74px;height:74px} .knob.m{width:96px;height:96px}
+  .knob.l{width:124px;height:124px}
+  .knob.sel{outline:3px solid var(--accent);outline-offset:3px}
+  .knob .press{position:relative;z-index:1;font-size:11px;font-weight:700;
+        color:#2a2e34;text-align:center;max-width:80%;line-height:1.15;
+        word-break:break-word;max-height:3.4em;overflow:hidden}
+  .turn{min-width:74px;max-width:96px;padding:8px 7px;border-radius:9px;
+        background:#22262e;border:1px solid var(--line);cursor:pointer;
+        text-align:center;color:var(--fg)}
+  .turn .ar{display:block;font-size:18px;line-height:1}
+  .turn .bd{display:block;font-size:11px;opacity:.85;word-break:break-word;
+            max-height:2.6em;overflow:hidden;margin-top:2px}
+  .turn:hover{border-color:var(--accent)}
+  .turn.sel{outline:3px solid var(--accent);outline-offset:2px}
+  .switches{display:flex;flex-direction:column;gap:6px;justify-content:center;
+            align-self:center}
+  .switches i{width:20px;height:6px;border-radius:3px;background:#5a5f67;
+              box-shadow:inset 0 1px 0 #ffffff18}
+
+  /* pad, driven by the LED mode.
+     render() writes background/color as inline styles, so rules that must
+     overrule a stored colour need !important. */
+
+  /* 0 -- dark */
+  .keys[data-mode="0"] .key{background:#2a2d33!important;color:#8d95a6!important}
+
+  /* 2 and 3 -- reactive: dark until pressed; hover stands in for a press.
+     Dimmed rather than blanked so the labels stay readable. */
+  .keys[data-mode="2"] .key,.keys[data-mode="3"] .key{
+       filter:brightness(.32) saturate(.25);transition:filter .12s}
+  .keys[data-mode="2"] .key:hover,.keys[data-mode="3"] .key:hover{
+       filter:brightness(1.25);box-shadow:0 0 22px 3px #ffffff30,
+       0 3px 5px #0007,inset 0 1px 0 #ffffff30}
+  /* 3 adds a ripple on ::after; pointer-events:none so it cannot swallow
+     the click. */
+  .keys[data-mode="3"] .key::after{content:"";position:absolute;
+       inset:0;border-radius:10px;pointer-events:none;opacity:0;
+       border:2px solid #ffffffcc}
+  .keys[data-mode="3"] .key:hover::after{animation:keyripple .9s ease-out infinite}
+  @keyframes keyripple{0%{opacity:.85;transform:scale(.35)}
+                       100%{opacity:0;transform:scale(1.5)}}
+
+  /* 4 -- one sweep across the pad. The travel is the column stagger, not the
+     gradient: same animation everywhere, each column a quarter-cycle behind.
+     nth-child(4n+N) addresses columns -- the grid is 4 wide. */
+  .keys[data-mode="4"] .key,.keys[data-mode="5"] .key{
+       color:#f2f4f8!important;text-shadow:0 1px 3px #0009;background-image:none}
+  .keys[data-mode="4"] .key{animation:keywave 2.4s linear infinite}
+  .keys[data-mode="4"] .key:nth-child(4n+2){animation-delay:-.6s}
+  .keys[data-mode="4"] .key:nth-child(4n+3){animation-delay:-1.2s}
+  .keys[data-mode="4"] .key:nth-child(4n+0){animation-delay:-1.8s}
+  /* 5 -- same colours and speed, no stagger. The stagger is deliberately the
+     ONLY difference from mode 4, so the duration is repeated, not varied. */
+  .keys[data-mode="5"] .key{animation:keywave 2.4s linear infinite}
+  /* background-color, not background: an animated longhand outranks the
+     inline declaration render() writes; a shorthand would not. */
+  @keyframes keywave{0%{background-color:#ff0055}  20%{background-color:#ffb300}
+    40%{background-color:#28e07a} 60%{background-color:#00b7ff}
+    80%{background-color:#7a5cff} 100%{background-color:#ff0055}}
+
+  /* Reduced motion: 2 and 3 keep the dim/hover contrast and lose the ripple;
+     the wave modes freeze on one colour of the sweep. */
+  @media (prefers-reduced-motion:reduce){
+    .keys[data-mode="3"] .key:hover::after{animation:none;opacity:.7;
+         transform:scale(1)}
+    .keys[data-mode="4"] .key,.keys[data-mode="5"] .key{
+         animation:none;background-color:#7a5cff!important}
+    .keys[data-mode="2"] .key,.keys[data-mode="3"] .key{transition:none}
+  }
+
+  .bar{display:flex;gap:8px;align-items:center;margin:16px 0 0}
+  .hint{font-size:12px;color:var(--dim)}
+
+  /* ================= LED area ================= */
+  .ledarea{margin-top:14px;border:1px solid var(--line);border-radius:11px;
+           background:var(--panel);overflow:hidden}
+  .ledarea.open{border-color:var(--accent)}
+  .ledbar{display:flex;align-items:center;gap:11px;width:100%;
+          background:none;border:0;cursor:pointer;padding:11px 14px;
+          font:inherit;color:var(--fg);text-align:left;border-radius:0}
+  .ledbar:hover{background:#ffffff06;border-color:transparent}
+  .ledbar .cap{font-size:11px;font-weight:700;letter-spacing:.1em;
+               color:var(--dim);flex:none}
+  .ledbar .nm{font-weight:600;font-size:13px;flex:none}
+  .ledbar .why{color:var(--dim);font-size:12px;flex:1;min-width:0;
+               overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ledbar .chev{flex:none;color:var(--dim);font-size:11px;transition:.2s;
+                display:inline-block}
+  .ledarea.open .ledbar .chev{transform:rotate(180deg)}
+  /* The 12 key colours, so the palette can be read without opening it. */
+  .ledbar .strip{display:flex;gap:2px;flex:none}
+  .ledbar .strip i{width:9px;height:16px;border-radius:2px;border:1px solid #0007}
+  .ledarea[data-perkey="0"] .ledbar .strip{opacity:.22;filter:grayscale(1)}
+  /* The dot says WHAT KIND of mode this is, never what colour the LEDs will
+     be -- so it is achromatic, and modes are told apart by form (hollow,
+     solid, breathing, drifting). Only the 12-colour strip may show hue. */
+  .ledbar .dot{width:12px;height:12px;border-radius:50%;flex:none;
+               background:var(--dim);box-shadow:none}
+  /* 消灯 */
+  .ledarea[data-mode="0"] .ledbar{opacity:.65}
+  .ledarea[data-mode="0"] .dot{background:transparent;
+       box-shadow:inset 0 0 0 2px #4a4f58}
+  /* 常時点灯 */
+  .ledarea[data-mode="1"] .dot{background:var(--fg);
+       box-shadow:0 0 9px 1px #e7eaf055}
+  /* 反応・波紋 -- breathes */
+  .ledarea[data-mode="2"] .dot,.ledarea[data-mode="3"] .dot{
+       background:var(--fg);animation:ledpulse 1.5s ease-in-out infinite}
+  @keyframes ledpulse{0%,100%{box-shadow:0 0 0 0 #e7eaf000}
+                      50%{box-shadow:0 0 10px 2px #e7eaf0aa}}
+  /* ウェーブ1・2 -- only brightness travels; no hue at any point. */
+  .ledarea[data-mode="4"] .dot,.ledarea[data-mode="5"] .dot{
+       background:var(--dim);animation:leddrift 2.6s ease-in-out infinite}
+  @keyframes leddrift{0%,100%{background:#5a6068;box-shadow:0 0 0 0 #e7eaf000}
+                      50%{background:#e7eaf0;box-shadow:0 0 10px 2px #e7eaf066}}
+  @media (prefers-reduced-motion:reduce){
+    .ledarea .dot{animation:none!important}
+    /* the static fallback must be achromatic too */
+    .ledarea[data-mode="4"] .dot,.ledarea[data-mode="5"] .dot{
+         background:var(--dim);box-shadow:0 0 7px 1px #e7eaf044}
+    .ledbar .chev{transition:none}
+  }
+  .ledbody{display:none;padding:3px 14px 14px;border-top:1px solid var(--line)}
+  .ledarea.open .ledbody{display:block}
+  /* Which keys a swatch click will paint. */
+  .ledtarget{font-size:12px;color:var(--dim);background:#0d0f14;
+             border:1px solid var(--line);border-radius:7px;padding:7px 11px}
+  .ledtarget b{color:var(--accent);font-weight:600}
+  /* A mode that ignores the palette dims its colour controls rather than
+     hiding them. pointer-events is what actually stops the clicking --
+     opacity alone leaves a control that looks dead and still works. */
+  .ledarea[data-perkey="0"] .ledcolors{opacity:.38;pointer-events:none;
+                                       filter:grayscale(.7)}
+  .ledwhy{display:none;font-size:12px;color:var(--warn);line-height:1.55;
+          background:#ffc86e12;border:1px solid #ffc86e33;border-radius:7px;
+          padding:8px 11px;margin:8px 0 2px}
+  .ledarea[data-perkey="0"] .ledwhy{display:block}
+  .swatches{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;
+            margin:8px 0 12px}
+  .swatches i{height:26px;border-radius:5px;cursor:pointer;border:1px solid #0006}
+  .swatches i:hover{outline:2px solid var(--accent);outline-offset:1px}
+  .row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+  label{font-size:12px;color:var(--dim);min-width:70px}
+  select,input[type=number],input[type=text]{background:#0d0f14;color:var(--fg);
+    border:1px solid var(--line);border-radius:7px;padding:8px 10px;
+    font-size:13px;font-family:inherit}
+  input[type=color]{width:46px;height:34px;padding:2px;background:#0d0f14;
+    border:1px solid var(--line);border-radius:7px;cursor:pointer}
+
+  /* ================= editor overlay ================= */
+  .overlay{position:fixed;inset:0;background:#000a;backdrop-filter:blur(3px);
+           display:none;align-items:flex-start;justify-content:center;
+           padding:28px;z-index:50;overflow:auto}
+  .overlay.open{display:flex}
+  /* Without max-height the sheet grows to fit the key list and the inner
+     scroller never has anything to scroll -- the page scrolls instead. */
+  .sheet{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+         width:min(1240px,100%);padding:22px 24px;box-shadow:0 20px 60px #000b;
+         display:flex;flex-direction:column;max-height:calc(100vh - 56px)}
+  /* The half that scrolls. The negative margins put the scrollbar at the
+     sheet's true edge; the matching padding realigns the content.
+
+     With overflow-x:hidden here, overflow-y can never compute to `visible`
+     -- CSS forces it to `auto`. Changing the y value alone does nothing. */
+  .sheetscroll{overflow-y:auto;overflow-x:hidden;flex:1;
+               border-top:1px solid var(--line);
+               margin:14px -24px -22px;padding:14px 24px 22px;
+               scrollbar-gutter:stable;
+               /* A floor, not min-height:0. Free shrinking collapsed this
+                  to ~36px of padding on a 700px viewport, hiding every key
+                  button, with nothing left to scroll. With a floor the
+                  sheet overflows and .overlay{overflow:auto} takes over. */
+               min-height:200px}
+  .sheet h3{margin:0 0 4px;font-size:17px}
+  .sheet .sub{color:var(--dim);font-size:12px;margin-bottom:16px}
+  /* On a short screen the fixed half leaves nothing for the key list, so
+     drop what is read once, not what is acted on. */
+  @media (max-height:820px){
+    .sheet .sub{display:none}
+    .pkpanel h4.pktitle{display:none}
+    .sheet{padding:16px 24px}
+  }
+  @media (max-height:700px){
+    .modrow .mhint{display:none}
+    .sheetscroll{padding-top:10px;margin-top:10px}
+  }
+
+  .modtog{padding:3px 6px;font-size:10px;font-weight:700;border-radius:4px;
+          margin-right:2px;min-width:0;opacity:.45;letter-spacing:.01em}
+  .modtog:hover{opacity:1}
+  .modtog.on{opacity:1;background:var(--acc);border-color:var(--acc);
+             color:#08131f}
+  /* ---------- chip strip ---------- */
+  .chipwrap{position:relative}
+  .chipstrip{display:flex;flex-wrap:wrap;align-items:center;gap:0;
+             min-height:74px;padding:10px 12px;border-radius:10px;
+             background:#0d0f14;border:1px solid var(--line);cursor:text;
+             align-content:flex-start}
+  .chipstrip.focus{border-color:var(--accent);box-shadow:0 0 0 2px #4a9eff2b}
+  .chipstrip .ph{color:var(--dim);font-size:13px;padding:6px 2px}
+  .chip{display:inline-flex;align-items:center;gap:6px;
+        padding:7px 11px;border-radius:8px;margin:3px 0;
+        background:var(--panel2);border:1px solid var(--line);
+        font-size:14px;font-weight:600;line-height:1.2;cursor:pointer;
+        white-space:nowrap;user-select:none}
+  .chip:hover{border-color:var(--accent)}
+  .chip.sel{background:#5b9dff2e;border-color:var(--accent);color:#fff}
+  .chip.over{border-color:var(--err);background:#ff7a7a1f;color:var(--err)}
+  .chip.mod{background:#ffc86e1c;border-color:#ffc86e55}
+  /* The armed-modifier ghost: PENDING, not a chip -- not in SEQ, not
+     clickable or deletable, gone the moment a key is picked. */
+  .chip.ghost{background:#ffc86e14;border:1px dashed #ffc86e88;
+              color:var(--warn);cursor:default;opacity:.9}
+  .chip.ghost:hover{border-color:#ffc86e88}
+  .chip.big{font-size:15px;padding:9px 13px}
+  .chip .cost{font-size:10px;font-weight:700;color:var(--accent);
+              vertical-align:super;letter-spacing:0}
+  .chip.over .cost{color:var(--err)}
+  .chip .ms{font-size:11px;font-weight:500;color:var(--dim)}
+  .chip .kindtag{font-size:10px;padding:1px 6px;border-radius:99px;
+                 background:var(--accent2);color:#fff;font-weight:700}
+  .caret{width:2px;height:26px;margin:3px 3px;border-radius:1px;
+         background:transparent;flex:0 0 2px}
+  .chipstrip.focus .caret.on{background:var(--accent);
+         animation:blink 1.06s steps(1,end) infinite}
+  @keyframes blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+  .chipin{position:absolute;opacity:0;width:1px;height:1px;padding:0;
+          border:0;background:transparent;color:transparent;
+          left:0;top:0;pointer-events:none}
+  .gap{flex:0 0 6px;height:26px}
+  .seqfoot{display:flex;gap:9px;align-items:center;margin-top:16px;
+           flex-wrap:wrap}
+  .slotinfo{font-size:12px;color:var(--dim)}
+  .slotinfo.warn{color:var(--warn);font-weight:600}
+  .slotinfo.over{color:var(--err);font-weight:600}
+  .slotnote{font-size:11px;color:var(--dim)}
+
+  /* chip popover (spec 9). Anchored inside .chipwrap (position:relative) so
+     it scrolls with the strip instead of drifting on resize. */
+  .chippop{position:absolute;z-index:70;display:none;
+           background:var(--panel);border:1px solid var(--accent);
+           border-radius:11px;padding:12px 13px;min-width:326px;
+           box-shadow:0 14px 40px #000c}
+  .chippop.open{display:block}
+  .chippop .pophd{font-size:12px;color:var(--dim);margin-bottom:9px;
+                  display:flex;align-items:center;gap:8px}
+  .chippop .pophd b{color:var(--fg);font-size:14px}
+  .chippop .poprow{display:flex;gap:6px;align-items:center;
+                   margin-bottom:9px;flex-wrap:wrap}
+  .chippop .poprow > label{min-width:52px;font-size:11px}
+  .chippop .modtog{padding:6px 11px;font-size:12px;min-width:0;
+                   opacity:.5;font-weight:600}
+  .chippop .modtog.on{opacity:1;background:var(--acc);
+                      border-color:var(--acc);color:#08131f}
+  .chippop .rmore{padding:6px 9px;font-size:11px;opacity:.7}
+  .chippop .rgroup{display:none;width:100%;gap:6px;flex-wrap:wrap}
+  .chippop .rgroup.open{display:flex}
+  .chippop input[type=number]{width:88px;padding:6px 8px;font-size:13px}
+  .chippop .popfoot{display:flex;gap:6px;align-items:center;
+                    margin-top:11px;flex-wrap:nowrap}
+  .chippop .popfoot button{font-size:12px;padding:7px 11px;white-space:nowrap}
+  .chippop .danger{border-color:var(--err);color:var(--err)}
+  .chippop .danger:hover{background:#ff7a7a1f}
+  .chippop .hintline{font-size:11px;color:var(--dim);margin-top:8px}
+
+  /* copy-to-another-key dialog (spec 11) */
+  .copygrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;
+            margin:4px 0 10px}
+  .copygrid button{padding:10px 8px;font-size:13px;border-radius:8px;
+                   font-weight:600;white-space:nowrap;overflow:hidden;
+                   text-overflow:ellipsis}
+  .copygrid button.on{border-color:var(--acc);background:#5b9dff26}
+  .copylayers{display:flex;gap:6px;align-items:center;margin-bottom:12px;
+              flex-wrap:wrap}
+  .copylayers button.on{border-color:var(--acc);background:#5b9dff26}
+  .copyprev{font-size:12px;color:var(--dim);background:#0d0f14;
+            border:1px solid var(--line);border-radius:8px;padding:9px 11px;
+            margin:6px 0 12px;word-break:break-all;font-family:inherit}
+
+  /* modal shell -- used ONLY by 他のキーへコピー (#cp). The key picker is
+     inline in the editor sheet (#pkPanel). */
+  .picker{position:fixed;inset:0;background:#000b;display:none;z-index:60;
+          align-items:flex-start;justify-content:center;padding:28px;
+          overflow:auto}
+  .picker.open{display:flex}
+  .pbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+        width:min(1080px,100%);padding:20px 22px}
+
+  /* inline key picker panel */
+  .pkpanel{margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
+  .pkpanel h4.pktitle{margin:0 0 8px;font-size:13px;font-weight:600}
+  .ptabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+  .ptabs button{padding:9px 16px;font-size:13px}
+  /* modifier row: always visible (CHIPSPEC 14.2). A modifier is a state that
+     rides along with the next pick, not a tab you can be "not on". It sits in
+     the sheet's fixed half, so it is not sticky. */
+  .modrow{display:flex;align-items:center;
+          gap:6px;flex-wrap:wrap;padding:9px 10px;margin:14px 0 0;
+          border:1px solid var(--line);border-radius:10px;
+          background:var(--bg2,#141922)}
+  .modrow .mlab{font-size:11px;color:var(--dim);letter-spacing:.06em;
+                margin-right:2px}
+  .modrow button{min-width:66px;padding:9px 12px;font-size:13px;
+                 border-radius:8px;font-weight:600}
+  /* Everything picked from here on carries it, so make it unmistakable. */
+  .modrow button.on{border-color:var(--warn);background:#ffc86e2e;
+                    color:var(--warn)}
+  /* Always shown. (The chip popover's own .rgroup toggle is a different
+     row.) */
+  .modrow .rgroup{display:flex;gap:6px;flex-wrap:wrap}
+  .modrow .rmore{min-width:0;padding:9px 11px;font-size:12px;color:var(--dim)}
+  .modrow .mhint{font-size:11px;color:var(--dim);width:100%;margin-top:2px}
+  /* jump tabs: they scroll, they do not switch */
+  .jumps{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+  .jumps button{padding:8px 15px;font-size:13px}
+  .jumps button.on{border-color:var(--acc);color:var(--acc)}
+  /* the three co-located blocks. scroll-margin-top only has to clear the
+     scroller's own top padding -- the modifier row is outside it. */
+  .pblock{margin:0 0 18px;scroll-margin-top:8px}
+  /* A quiet divider, not a heading -- the fixed tabs above already name
+     these three. */
+  .pblab{margin:0 0 8px;font-size:11px;font-weight:600;color:var(--dim);
+         letter-spacing:.08em;padding-bottom:5px;
+         border-bottom:1px solid var(--line)}
+  .pblock.dim{opacity:.5}
+  .pblock.dim .pnote{color:var(--warn)}
+  /* Sizes to its CONTENT and must never scroll internally -- an inner
+     scrolling box hid most of 文字・数字. On a short viewport it is the
+     overlay (.overlay{overflow:auto}) that scrolls. */
+  .pgrid{display:flex;flex-wrap:wrap;gap:7px;overflow:visible;
+         padding:4px 2px}
+  /* reselect banner: transient "swap this chip's key" mode */
+  .pkmode{display:none;align-items:center;gap:10px;flex-wrap:wrap;
+          margin:0 0 10px;padding:9px 12px;border-radius:9px;
+          background:#ffc86e1f;border:1px solid var(--warn);
+          color:var(--warn);font-size:13px;font-weight:600}
+  .pkmode.on{display:flex}
+  .pkmode button{font-size:12px;padding:6px 12px}
+  .pgrid button{min-width:62px;padding:11px 13px;font-size:14px;
+                border-radius:8px;font-weight:600}
+  .pgrid button.wide{min-width:132px;font-size:13px}
+  .pnote{color:var(--dim);font-size:12px;width:100%;margin:4px 0 8px}
+  /* 文字・数字 tab. The Shift toggle flips the WHOLE grid to shifted glyphs;
+     while on, every button costs 2 slots. */
+  .pshift{display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%;
+          margin:0 0 8px}
+  .pshift .hint{font-size:12px;color:var(--dim)}
+  .pshift button{min-width:104px;padding:9px 14px;font-size:13px}
+  .pshift button.on{border-color:var(--warn);background:#ffc86e26;
+                    color:var(--warn)}
+  .pgroup{display:flex;flex-wrap:wrap;gap:7px;width:100%;align-items:center;
+          margin:0 0 4px}
+  .pglab{font-size:11px;color:var(--dim);width:100%;margin:2px 0 1px;
+         letter-spacing:.06em}
+  /* Compact squares so 英字+数字+記号 all fit above the fold. */
+  .pgrid button.chbtn{min-width:34px;width:34px;height:34px;padding:0;
+                      font-size:15px;line-height:34px;text-align:center;
+                      display:inline-flex;align-items:center;
+                      justify-content:center;border-radius:7px}
+  /* tighter gaps inside a character group */
+  .pgroup{gap:5px}
+  /* search-driven picker */
+  .psearch{width:100%;padding:12px 14px;font-size:15px;border-radius:9px;
+           border:1px solid var(--line);background:#0e1116;color:var(--fg);
+           font-family:inherit;box-sizing:border-box}
+  .psearch:focus{outline:none;border-color:var(--acc)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  /* The write button is disabled far more often than not, so it must read
+     as "nothing to do" rather than broken. */
+  button.primary:disabled{opacity:.55;background:var(--panel2);
+                          border-color:var(--line);color:var(--dim)}
+  /* An unsaved change is the one thing a user can lose. */
+  #pending{color:var(--warn)}
+  .menu{position:relative}
+  .menupop{display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:60;
+           background:var(--panel);border:1px solid var(--line);border-radius:10px;
+           padding:6px;min-width:200px;box-shadow:0 12px 32px #0009}
+  .menu.open .menupop{display:block}
+  .menupop button{display:block;width:100%;text-align:left;border:0;
+                  background:transparent;padding:9px 11px}
+  .menupop button:hover{background:var(--panel2)}
+  .menupop hr{border:0;border-top:1px solid var(--line);margin:5px 2px}
+  .difflist{max-height:230px;overflow:auto;margin:10px 0;border:1px solid var(--line);
+            border-radius:9px;background:#0e1116;padding:8px 10px;font-size:12px}
+  .difflist div{padding:3px 0;color:var(--dim)}
+  .difflist b{color:var(--fg);font-weight:600}
+  /* A footnote to the line above, not an entry of its own. */
+  .difflist .quiet{padding:0 0 3px 12px;font-size:11px;opacity:.72}
+  .psearch.bad{border-color:var(--err);background:#ff7a7a14}
+  /* search hits are capped in number by the search code, so no scroll box */
+  .cands{display:grid;gap:5px;margin:8px 0 4px;
+         overflow:visible;align-content:start;
+         grid-template-columns:repeat(2,1fr)}
+  .cands:empty{margin:0}
+  @media(max-width:560px){.cands{grid-template-columns:1fr}}
+  .cands button{display:flex;align-items:center;gap:10px;text-align:left;
+                padding:10px 13px;font-size:14px;border-radius:8px;width:100%}
+  .cands button.on{border-color:var(--acc);background:#5b9dff1f}
+  .cands .nm{font-weight:600}
+  .cands .meta{color:var(--dim);font-size:12px;margin-left:auto;
+               white-space:nowrap}
+  .cbadge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;
+          background:#5b9dff26;color:var(--acc);letter-spacing:.04em}
+  .cbadge.mod{background:#ffc86e26;color:var(--warn)}
+  .cbadge.sp{background:#ff7a7a26;color:var(--err)}
+  .nohit{color:var(--err);font-size:13px;padding:10px 2px}
+  #msg{padding:9px 13px;border-radius:7px;font-size:12px;margin-top:12px;
+       display:none}
+  #msg.ok{display:block;background:#3ddc8420;color:var(--ok)}
+  #msg.err{display:block;background:#ff7a7a20;color:var(--err)}
+  .warn{font-size:12px;color:var(--warn);margin-top:10px}
+</style>
+</head>
+<body>
+<header>
+  <h1>MiniKeyboard</h1>
+  <span id="ver" class="hint" style="font-size:11px"></span>
+  <div style="display:flex;gap:6px" id="layerBtns"></div>
+  <div class="grow"></div>
+  <button id="connectBtn" onclick="connectDevice()" data-i18n="btn.connect"></button>
+  <button id="disconnectBtn" onclick="disconnectDevice()" style="display:none"
+          data-i18n="btn.disconnect"></button>
+  <span id="transport" class="hint"></span>
+  <div class="menu">
+    <button onclick="toggleMenu(event)" data-i18n="btn.export"></button>
+    <div class="menupop">
+      <button onclick="exportApp()" data-testid="exportapp" data-i18n="btn.exportApp"></button>
+      <button onclick="exportDevice()" data-testid="exportdevice" data-i18n="btn.exportDevice"></button>
+      <hr>
+      <button onclick="$('#importFile').click()" data-testid="import" data-i18n="btn.import"></button>
+    </div>
+  </div>
+  <input type="file" id="importFile" accept="application/json,.json"
+         style="display:none" onchange="importFile(event)">
+  <button id="reloadBtn" onclick="reload()" style="display:none"
+          data-testid="reload" data-i18n="btn.reload" data-i18n-title="tip.reload"></button>
+  <button id="revertBtn" onclick="revertToDevice()" style="display:none"
+          data-testid="revert" data-i18n="btn.revert"></button>
+  <button class="primary" id="writeBtn" onclick="writeAll()" disabled
+          data-testid="write" data-i18n="btn.write"></button>
+  <span id="pending" class="hint"></span>
+</header>
+
+<div class="wrap">
+  <div class="device">
+    <div class="screws"><i></i><i></i><i></i><i></i></div>
+    <div class="keys" id="keys"></div>
+    <div class="switches"><i></i><i></i><i></i></div>
+    <div class="knobs" id="knobs"></div>
+  </div>
+  <div class="bar">
+    <span class="hint" id="padHint" data-i18n="pad.hint"></span>
+  </div>
+
+  <!-- Collapsed, this is a status line: mode, the 12 key colours, and what
+       the mode does. -->
+  <div class="ledarea" id="ledarea" data-mode="0" data-perkey="1"
+       data-testid="ledarea">
+    <button class="ledbar" id="ledbar" data-testid="ledbar"
+            onclick="toggleLedArea()" aria-expanded="false"
+            aria-controls="ledbody">
+      <span class="dot"></span>
+      <span class="cap">LED</span>
+      <span class="nm" id="barName"></span>
+      <span class="strip" id="barStrip"></span>
+      <span class="why" id="barWhy"></span>
+      <span class="chev">▼</span>
+    </button>
+    <div class="ledbody" id="ledbody">
+      <div class="row" style="margin-top:12px">
+        <label data-i18n="led.mode"></label>
+        <select id="ledMode" onchange="onLedMode()"></select>
+      </div>
+      <!-- Why the controls below are dim. Filled by syncLedBar per mode. -->
+      <div class="ledwhy" id="ledWhy" data-testid="ledwhy"></div>
+      <div class="ledcolors" id="ledColors" data-testid="ledcolors">
+        <div class="ledtarget" id="ledTarget" data-testid="ledtarget"></div>
+        <div class="swatches" id="swatches"></div>
+        <div class="row" style="margin-bottom:0">
+          <label data-i18n="led.customColor"></label>
+          <input type="color" id="ledAll" value="#4a9eff">
+          <button onclick="applyAll()" data-i18n="led.applyAll"></button>
+          <div class="grow"></div>
+          <span class="hint" data-i18n="led.writeHint"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- #msg is where every status message on the page lands. -->
+  <div class="warn" id="wirelessNote"></div>
+  <div id="msg" data-testid="toast"></div>
+</div>
+
+<!-- sequence editor -->
+<div class="overlay" id="ov">
+  <div class="sheet">
+    <h3 id="ovTitle">key01</h3>
+    <div class="sub" data-i18n="ed.intro"></div>
+    <div class="chipwrap">
+      <div class="chipstrip" id="chipStrip" data-testid="chipstrip"
+           onmousedown="stripMouseDown(event)"></div>
+      <input class="chipin" id="chipIn" data-testid="chipinput"
+             autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div class="chippop" id="chippop" data-testid="chippop"></div>
+    </div>
+    <div class="seqfoot">
+      <span class="slotinfo" id="slotinfo" data-testid="slotinfo"></span>
+      <span class="slotnote" id="slotnote" data-testid="slotnote"></span>
+      <span id="meterMount"></span>
+      <div class="grow"></div>
+      <button onclick="openCopyTo()" data-i18n="ed.copyTo"></button>
+      <button onclick="closeEditor()" data-i18n="ed.cancel"></button>
+      <button onclick="clearSeq()" data-i18n="ed.clearAll"></button>
+      <button class="primary" id="saveBtn" data-testid="save"
+              onclick="saveSeq()" data-i18n="ed.confirm"></button>
+    </div>
+    <!-- inline key picker panel (always visible; no modal). What you hunt
+         WITH stays above the scroll line; only the key blocks scroll. -->
+    <div class="pkpanel" id="pkPanel" data-testid="pkpanel">
+      <h4 class="pktitle"><span data-i18n="pk.title"></span>
+        <span class="hint" id="pkFor" data-testid="pkfor"
+              style="font-weight:400;margin-left:6px"></span></h4>
+      <div class="pkmode" id="pkMode" data-testid="pkmode">
+        <span id="pkModeText"></span>
+        <button data-testid="pkmodecancel" onclick="cancelReselect()" data-i18n="pk.stop"></button>
+      </div>
+      <div class="modrow" id="modrow" data-testid="modrow"></div>
+      <input class="psearch" id="psearch" data-testid="psearch"
+             autocomplete="off" spellcheck="false"
+             data-i18n-placeholder="pk.search"
+             oninput="onSearch()" onkeydown="searchKey(event)">
+      <div class="cands" id="cands" data-testid="cands"></div>
+      <div class="jumps" id="jumps" data-testid="jumps"></div>
+    </div>
+
+    <!-- Everything above stays put; everything below scrolls, so the chips
+         and the finish buttons never leave the screen. -->
+    <div class="sheetscroll" id="sheetScroll" data-testid="sheetscroll">
+      <div id="pblocks" data-testid="pblocks"></div>
+    </div><!-- /.sheetscroll -->
+  </div>
+</div>
+
+<!-- 接続時の食い違い: the pad may hold something other than what is on
+     screen. Either side loses work, so the user chooses. Shown once, at
+     connect. -->
+<div class="overlay" id="cf">
+  <div class="sheet">
+    <h3 data-i18n="cf.title"></h3>
+    <div class="sub" data-i18n="cf.sub"></div>
+    <div class="difflist" id="cfList"></div>
+    <div class="seqfoot">
+      <div class="grow"></div>
+      <button onclick="resolveConflict('device')" data-testid="takedevice">
+        data-i18n="cf.takeDevice"></button>
+      <button class="primary" onclick="resolveConflict('draft')" data-testid="takedraft">
+        data-i18n="cf.keepDraft"></button>
+    </div>
+  </div>
+</div>
+
+<!-- 書き込み確認 -->
+<div class="overlay" id="wr">
+  <div class="sheet">
+    <h3 data-i18n="wr.title"></h3>
+    <div class="sub" id="wrSub"></div>
+    <div class="difflist" id="wrList"></div>
+    <div class="seqfoot">
+      <span class="hint" id="wrNote"></span>
+      <div class="grow"></div>
+      <button onclick="closeWrite()" data-testid="writecancel" data-i18n="wr.cancel"></button>
+      <button class="primary" id="wrGo" onclick="doWrite()" data-testid="writego">
+        data-i18n="wr.go"></button>
+    </div>
+  </div>
+</div>
+
+<!-- 他のキーへコピー (spec 11) -->
+<div class="picker" id="cp">
+  <div class="pbox" style="width:min(760px,100%)">
+    <h3 style="margin:0 0 2px" data-i18n="cp.title"></h3>
+    <div class="sub hint" id="cpFrom"></div>
+    <div class="copyprev" id="cpPrev" data-testid="copyprev"></div>
+    <h4 style="margin:0 0 8px;font-size:12px;color:var(--dim)" data-i18n="cp.layer"></h4>
+    <div class="copylayers" id="cpLayers"></div>
+    <h4 style="margin:0 0 8px;font-size:12px;color:var(--dim)" data-i18n="cp.target"></h4>
+    <div class="copygrid" id="cpTargets" data-testid="copytargets"></div>
+    <div class="seqfoot">
+      <span class="hint" id="cpNote"></span>
+      <div class="grow"></div>
+      <button onclick="closeCopyTo()" data-i18n="cp.cancel"></button>
+      <button class="primary" id="cpGo" data-testid="copygo"
+              onclick="doCopyTo()" data-i18n="cp.go"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* The two states. DRAFT is what the user is designing: it survives a closed
+   tab and is the only thing an edit touches. DEVICE is what the hardware last
+   told us, replaced only by a read. The write button's enabled-ness comes from
+   the difference. STATE is the render-ready view of DRAFT. See pad-model.js. */
+let DRAFT=null, DEVICE=null;
+/* True while a pad read is in flight. `let` does not hoist and syncWrite() is
+   defined above loadDevice(), so it must be declared here or the first render
+   throws before the page appears. */
+let READING=false, WRITING=false;
+let META=null, STATE=null, LAYER=1, SEL=null, COLORS=[];
+let SEQ=[];            // [{kind:'key'|'mouse'|'media', code:int, label:str, ms:int}]
+let PICK_ROW=-1;
+
+/* Chip editor state.
+   CARET: 0..SEQ.length, the gap index the invisible input follows.
+   SELA/SELB: half-open selection [SELA,SELB) over chip indices; SELA<0 = none.
+   Exactly one of caret state and selection state is active at a time. */
+let CARET=0, SELA=-1, SELB=-1;
+let UNDO=[], REDO=[];
+const MAXCHIPS=40;
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+/* PAD is the only thing here that knows how bytes reach the device. See
+   pad-driver.js.
+
+   This script is deliberately NOT type="module": ~25 inline onclick handlers
+   resolve against window, and module scope would break every one of them
+   silently. Modules are pulled in with a dynamic import instead. */
+let PAD=null, CAT=null, WIRE=null, MODEL=null;
+let D_SLEEP=ms=>new Promise(r=>setTimeout(r,ms)), SETTLE_AFTER_WRITE=600;
+
+async function initPad(){
+  CAT  = await import('./catalog.js');
+  WIRE = await import('./pad-wire.js');
+  MODEL= await import('./pad-model.js');
+  window.MODEL=MODEL;
+  const D = await import('./pad-driver.js');
+  window.PadHttp=D.PadHttp; window.PadWebHid=D.PadWebHid; window.PadMock=D.PadMock;
+  /* Timing constants live with the driver that measured them, not here. */
+  D_SLEEP=D.sleep; SETTLE_AFTER_WRITE=D.SETTLE_AFTER_WRITE;
+  // A test may install its own PAD before boot; never overwrite that.
+  /* A test cannot construct a PadMock before boot -- the class arrives with
+     the module boot is loading -- so it asks and boot builds it. window.PAD
+     alone does not survive the reloads a persistence test needs. */
+  if(!PAD && window.__padMock) PAD = new D.PadMock(window.__padMock);
+  if(!PAD) PAD = window.PAD || await D.autoDriver();   // may be null
+  window.PAD=PAD; window.CAT=CAT; window.WIRE=WIRE;
+  return PAD;
+}
+/** Offer to connect over WebHID. Requires a user gesture, hence the button.
+ *  The read becomes DEVICE, the comparison baseline -- it does NOT overwrite
+ *  the screen. On disagreement the user picks a side. */
+async function connectDevice(){
+  try{
+    const d=new window.PadWebHid();
+    await d.connect();
+    PAD=d; window.PAD=d;
+    syncTransport();
+    msg(CAT.t('msg.connected'),'ok');
+    await loadDevice();
+  }catch(e){ msg(CAT.t('msg.connectFail',{e:e.message}),'err'); syncTransport(); }
+}
+/* A read takes about a second per layer and the page stays live throughout.
+   Marking it busy stops the write path acting on a moving baseline, and stops
+   a second read starting on top of the first. */
+/** Read the pad into DEVICE and reconcile it with the draft. */
+async function loadDevice(){
+  if(!PAD){ msg(CAT.t('msg.noDevice'),'err'); return; }
+  if(READING){ return; }
+  /* publish() right away, so a watcher can see the read start. */
+  READING=true; publish();
+  /* refresh(), not syncWrite(): the mirrored copy of READING must update too,
+     or a waiter on "read finished" waits forever. */
+  try{ await loadDeviceInner(); } finally{ READING=false; refresh(); }
+}
+async function loadDeviceInner(){
+  /* readAll gives a 0-based LED array and driver-shaped bindings; toPlain
+     normalises both. */
+  DEVICE = MODEL.toPlain(await PAD.readAll());
+  if(!DRAFT || isEmptyDraft()){
+    /* Nothing designed yet: adopt the pad without asking. */
+    setDraft(MODEL.cloneConfig(DEVICE));
+    msg(CAT.t('msg.loaded'),'ok');
+    refresh(); return;
+  }
+  const d=MODEL.diff(DRAFT,DEVICE);
+  /* refresh() BEFORE the dialog: it recomputes the diff and publishes the new
+     baseline. Skipping it left the write button judging against the previous
+     device state (null on a first connect), so a matching pad looked dirty. */
+  refresh();
+  if(!d.count){ msg(CAT.t('msg.inSync'),'ok'); return; }
+  openConflict(d);
+}
+/** True when the draft holds nothing the user would mind losing.
+ *
+ *  diff() alone is wrong here: it treats an absent LED record as "no opinion",
+ *  so a draft whose only content is a colour scheme compares equal to an empty
+ *  one and gets silently replaced on connect. Check both halves. */
+function isEmptyDraft(){
+  if(!DRAFT) return true;
+  if(MODEL.diff(DRAFT,MODEL.emptyConfig()).count) return false;
+  return ![1,2,3].some(L=>DRAFT.leds&&DRAFT.leds[L]);
+}
+/* Two different things are called "disconnect":
+     close()   this page lets go; the permission stands, so reopening
+               reconnects with no prompt.
+     forget()  the permission goes; the next connect must ask.
+   The button does the second. */
+async function disconnectDevice(){
+  if(!PAD || PAD.name!=='webhid'){ msg(CAT.t('msg.notDirect'),'err'); return; }
+  try{
+    await PAD.forget();
+    await window.PadWebHid.forgetAll();   // stale grants from earlier sessions
+    PAD=null; window.PAD=null;
+    /* The design stays; only the comparison baseline goes. */
+    DEVICE=null;
+    msg(CAT.t('msg.disconnected'),'ok');
+    refresh();
+  }catch(e){ msg(CAT.t('msg.disconnectFail',{e:e.message}),'err'); }
+}
+function syncTransport(){
+  const el=$('#transport'); if(!el) return;
+  const via=PAD&&PAD.name;   // null once disconnected
+  el.textContent = via==='webhid' ? CAT.t('conn.webhid')
+                 : via==='mock'   ? CAT.t('conn.mock')
+                 : CAT.t('conn.none');
+  const c=$('#connectBtn'), d=$('#disconnectBtn'), r=$('#reloadBtn');
+  if(c) c.style.display = (via==='webhid'||via==='mock') ? 'none' : '';
+  if(d) d.style.display = (via==='webhid') ? '' : 'none';
+  if(r) r.style.display = via ? '' : 'none';
+}
+/* The write button. Enabled exactly when the draft differs from the device,
+   so "already written" is computed rather than remembered. With no pad it is
+   disabled for a different reason and says which. */
+function syncWrite(){
+  const b=$('#writeBtn'), p=$('#pending'), r=$('#revertBtn');
+  if(!b) return;
+  const d=DRAFT?MODEL.diff(DRAFT,DEVICE):{count:0,bindings:[],leds:[]};
+  PENDING=d;
+  if(READING){
+    /* Mid-read: any diff against the baseline is provisional, so wait. */
+    b.disabled=true; b.textContent=CAT.t('conn.loading');
+    p.textContent=''; if(r) r.style.display='none';
+    return;
+  }
+  if(!PAD){
+    b.disabled=true;
+    b.textContent=CAT.t('btn.write');
+    p.textContent=d.count?CAT.t('conn.offlineN',{n:d.count}):'';
+    if(r) r.style.display='none';
+    return;
+  }
+  b.disabled=!d.count;
+  b.textContent=d.count?CAT.t('btn.writeN',{n:d.count}):CAT.t('btn.written');
+  p.textContent=d.count?CAT.t('conn.unwritten'):'';
+  if(r) r.style.display=(DEVICE&&d.count)?'':'none';
+}
+let PENDING={count:0,bindings:[],leds:[]};
+/** Redraw everything that depends on the draft: pad, LED panel, write
+ *  button. Called after every edit. */
+function refresh(){
+  STATE = DRAFT ? viewOf(DRAFT) : {layers:{1:[],2:[],3:[]},leds:{}};
+  const led=STATE.leds[LAYER];
+  COLORS = led ? led.colors.slice(0,12) : Array(12).fill('#000000');
+  const ms=$('#ledMode');
+  if(ms&&led) ms.value=led.mode;
+  if(META) syncLedBar();
+  render(); syncTransport(); syncWrite(); publish();
+}
+/** Persist the draft and redraw. Every edit goes through here; saving per
+ *  edit rather than on a timer makes a closed tab cost nothing. */
+function setDraft(cfg){
+  DRAFT=cfg;
+  MODEL.saveDraft(DRAFT);
+  refresh();
+}
+/* `let` at the top of a classic script is not a window property, so the two
+   states are invisible outside this file -- including to the browser test.
+   Mirror them on window after every change. */
+function publish(){ window.DRAFT=DRAFT; window.DEVICE=DEVICE; window.PENDING=PENDING;
+                    window.READING=READING; window.WRITING=WRITING; }
+function msg(t,c){const m=$('#msg');m.textContent=t;m.className=c;
+  if(c==='ok') setTimeout(()=>{m.className=''},2600);}
+/* Layers are 1-based everywhere above the driver; the LED commands' 0-based
+   numbering is converted inside pad-wire.js. */
+
+/* browser key event -> HID usage */
+const CODE2HID={
+  KeyA:0x04,KeyB:0x05,KeyC:0x06,KeyD:0x07,KeyE:0x08,KeyF:0x09,KeyG:0x0A,
+  KeyH:0x0B,KeyI:0x0C,KeyJ:0x0D,KeyK:0x0E,KeyL:0x0F,KeyM:0x10,KeyN:0x11,
+  KeyO:0x12,KeyP:0x13,KeyQ:0x14,KeyR:0x15,KeyS:0x16,KeyT:0x17,KeyU:0x18,
+  KeyV:0x19,KeyW:0x1A,KeyX:0x1B,KeyY:0x1C,KeyZ:0x1D,
+  Digit1:0x1E,Digit2:0x1F,Digit3:0x20,Digit4:0x21,Digit5:0x22,Digit6:0x23,
+  Digit7:0x24,Digit8:0x25,Digit9:0x26,Digit0:0x27,
+  Enter:0x28,Escape:0x29,Backspace:0x2A,Tab:0x2B,Space:0x2C,
+  Minus:0x2D,Equal:0x2E,BracketLeft:0x2F,BracketRight:0x30,Backslash:0x31,
+  Semicolon:0x33,Quote:0x34,Backquote:0x35,Comma:0x36,Period:0x37,Slash:0x38,
+  CapsLock:0x39,
+  F1:0x3A,F2:0x3B,F3:0x3C,F4:0x3D,F5:0x3E,F6:0x3F,F7:0x40,F8:0x41,F9:0x42,
+  F10:0x43,F11:0x44,F12:0x45,
+  PrintScreen:0x46,ScrollLock:0x47,Pause:0x48,Insert:0x49,Home:0x4A,
+  PageUp:0x4B,Delete:0x4C,End:0x4D,PageDown:0x4E,
+  ArrowRight:0x4F,ArrowLeft:0x50,ArrowDown:0x51,ArrowUp:0x52,
+  IntlRo:0x87,IntlYen:0x89,KanaMode:0x88,Convert:0x8A,NonConvert:0x8B,
+};
+const MODCODE={Ctrl:0xF1,Shift:0xF2,Alt:0xF3,Win:0xF4};
+
+/* Fill every element carrying a data-i18n* attribute from the string table.
+   An untranslated element shows its key, which is easier to spot than a
+   blank. */
+function applyI18n(root){
+  const R=root||document;
+  R.querySelectorAll('[data-i18n]').forEach(el=>{
+    /* innerHTML, not textContent: several carry <b>, and the table is ours --
+       no user input in it. */
+    el.innerHTML=CAT.t(el.dataset.i18n);
+  });
+  R.querySelectorAll('[data-i18n-title]').forEach(el=>{
+    el.title=CAT.t(el.dataset.i18nTitle);
+  });
+  R.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+    el.placeholder=CAT.t(el.dataset.i18nPlaceholder);
+  });
+}
+
+async function boot(){
+  /* After initPad, not before: CAT arrives with the module import. Calling it
+     first read `t` off a null CAT and took the page down. */
+  await initPad();
+  applyI18n();
+  /* META now comes from catalog.js, not the server: the shape is kept, the
+     source is local, so the page works with no server behind it. */
+  META={ chars:CAT.charTable(), hidnames:{...CAT.HID_NAMES,...CAT.KEYPAD_NAMES},
+         mouse:CAT.mouseNames(), media:CAT.mediaNames(),
+         modes:CAT.ledModeList(), swatches:CAT.VENDOR_PALETTE,
+         wireless:CAT.wirelessNote(), max_codes:CAT.MAX_CODES,
+         targets:CAT.allTargets().map(t=>t.name) };
+  const vs=$('#ver'); if(vs) vs.textContent='build '+(vs.dataset.v||'?');
+  META.modes.forEach(m=>$('#ledMode').add(new Option(m.n+' — '+(m.label||m.name),m.n)));
+  $('#layerBtns').innerHTML=[1,2,3].map(n=>
+    `<button id="lb${n}" onclick="setLayer(${n})">${esc(CAT.t('pad.layer',{n}))}</button>`).join('');
+  $('#swatches').innerHTML=(META.swatches||[]).flat().map(h=>
+    `<i title="${h}" style="background:${h}" onclick="useSwatch('${h}')"></i>`).join('');
+  $('#wirelessNote').textContent=META.wireless||'';
+  restoreLedArea();
+  buildCharMaps(); bindChipInput();
+  /* Restore the draft before touching the device, so a page opened with no
+     pad is still the page the user left. */
+  DRAFT = MODEL.loadDraft() || MODEL.emptyConfig();
+  setLayer(1);
+  /* Say why up front. Without this the connect button looks live and fails
+     on the click with an internal error about getDevices. */
+  const why = !window.PadWebHid.supported() ? 'msg.noWebhid'
+            : !window.isSecureContext       ? 'msg.insecure' : null;
+  if(why){
+    const c=$('#connectBtn'); if(c) c.disabled=true;
+    msg(CAT.t(why),'err');
+    return;
+  }
+  if(!PAD){
+    msg(MODEL.diff(DRAFT,null).count
+      ? CAT.t('msg.restored') : CAT.t('msg.pickDevice'),'');
+    return;
+  }
+  await loadDevice();
+}
+/* Re-read the pad: refreshes the comparison baseline and reconciles the
+   draft against it, as at connect time. Does not touch the screen. */
+async function reload(){
+  if(!PAD){ msg(CAT.t('msg.noDeviceHint'),'err'); return; }
+  try{ await loadDevice(); }
+  catch(e){ msg(CAT.t('msg.cannotConnect',{e:e.message}),'err'); }
+}
+/* The draft in the shape render() wants: snake_case key_id, resolved label,
+   hex colours. The one place the model's shape and the UI's meet. */
+function viewOf(all){
+  const layers={}, leds={};
+  for(const L of [1,2,3]){
+    const rows=(all.layers&&all.layers[L])||[];
+    layers[L]=rows.map(r=>{
+      const keyId=r.keyId!==undefined?r.keyId:r.key_id;
+      const codes=r.kind===CAT.KIND_MOUSE&&r.mouse
+        ? [r.mouse.buttons||r.mouse.mod||0] : (r.codes||[]);
+      return { key_id:keyId, name:r.name||CAT.keyIdToName(keyId),
+               kind:r.kind, codes, delays:r.delays||[],
+               // keep the mouse fields: the editor cannot reconstruct a wheel
+               // or a modifier from a button code alone
+               ...(r.mouse?{mouse:r.mouse}:{}),
+               label:r.label!==undefined?r.label:describe(r.kind,codes,r.mouse) };
+    }).filter(r=>CAT.isPhysical(r.key_id));
+    /* LEDs arrive 0-based from both drivers; expose them 1-based like layers.
+       Colours arrive as [r,g,b] triples or '#rrggbb'; everything downstream
+       works in hex, so convert here. */
+    /* A driver read gives a 0-based array; the model gives a 1-based object.
+       Indexing the object branch 0-based read layer 2's colours onto 1. */
+    const src=all.leds; const raw=Array.isArray(src)?src[L-1]:(src&&src[L]);
+    leds[L]=raw?{mode:raw.mode,colors:(raw.colors||[]).map(toHex)}:null;
+  }
+  return {layers,leds};
+}
+/** '#rrggbb', whether it arrived as that or as an [r,g,b] triple. */
+function toHex(c){
+  if(typeof c==='string') return c;
+  if(!Array.isArray(c)) return '#000000';
+  return '#'+c.slice(0,3).map(v=>(v|0).toString(16).padStart(2,'0')).join('');
+}
+/** The [r,g,b] triple the driver wants, from the UI's hex string. */
+function fromHex(h){
+  const m=/^#?([0-9a-f]{6})$/i.exec(String(h)||'');
+  if(!m) return [0,0,0];
+  const n=parseInt(m[1],16);
+  return [(n>>16)&255,(n>>8)&255,n&255];
+}
+/** A human label for a binding the driver did not name for us. */
+function describe(kind,codes,mouse){
+  if(kind===CAT.KIND_MOUSE){
+    const m=mouse||{};
+    /* Match on the unmodified action and prefix the modifier separately.
+       The table used to carry Ctrl+ホイール↑ and its five siblings as their
+       own entries; they are gone from the picker, but the device can still
+       be holding one -- and reading a real binding back as NULL because the
+       button that made it no longer exists would be a lie about the pad. */
+    const base=CAT.MOUSE_ACTIONS.find(a=>
+      (a.buttons|0)===(m.buttons|0) && (a.wheel|0)===(m.wheel|0));
+    if(base){
+      const mod=m.mod|0;
+      return mod ? (CAT.MODS[mod]||('0x'+mod.toString(16)))+'+'+base.label
+                 : base.label;
+    }
+    if(m.buttons&&CAT.MOUSE_BUTTONS[m.buttons]) return CAT.MOUSE_BUTTONS[m.buttons];
+    return 'NULL';
+  }
+  if(!codes||!codes.length) return 'NULL';
+  if(kind===CAT.KIND_MEDIA) return CAT.mediaLabel(codes[0]);
+  /* Same rule as the chip strip (chipText): name the key by what it TYPES on
+     this layout, and where Shift alone has a glyph of its own, show the glyph
+     instead of the prefix. `Shift + RBracket` was two wrongs at once -- a US
+     key name for a key this board does not have, and a modifier that the
+     layout already folds into `{`. */
+  return WIRE.foldMods(codes).map(c=>keyCombo(c.code,c.mods)).join(' ');
+}
+/** One folded chip as text: `[`, `{`, `Ctrl+c`, `Ctrl+Shift+Delete`.
+ *  Shared by the pad faces, the write dialog and the diff list so all three
+ *  name a key the same way. */
+function keyCombo(code,mods){
+  const ms=CAT.sortMods(mods||[]);
+  if(CAT.isMod(code)&&!ms.length) return CAT.MODS[code]||hidLabel(code);
+  if(!ms.length) return baseName(code);
+  if(ms.length===1&&ms[0]===0xF2){
+    const sh=shiftName(code);
+    if(sh) return sh;                 // Shift+0x30 is `{`, not `Shift + [`
+  }
+  return ms.map(m=>CAT.MODS[m]).concat(baseName(code)).join('+');
+}
+/* Switching layers is a view change, not a device round-trip. */
+function setLayer(n){LAYER=n;SEL=null;
+  [1,2,3].forEach(i=>$('#lb'+i).classList.toggle('on',i===n));refresh();}
+const entries=()=>(STATE&&STATE.layers[LAYER])||[];
+const byName=n=>entries().find(e=>e.name===n);
+
+/* device rendering */
+function textOn(hex,lit){
+  if(!lit) return '#e7eaf0';
+  const n=parseInt(hex.slice(1),16);
+  return (0.299*((n>>16)&255)+0.587*((n>>8)&255)+0.114*(n&255))>140
+    ? '#16181d':'#f2f4f8';
+}
+function render(){
+  const K=$('#keys');K.innerHTML='';
+  for(let i=1;i<=12;i++){
+    const n='key'+String(i).padStart(2,'0');
+    const e=byName(n)||{label:'NULL',codes:[]};
+    const col=COLORS[i-1]||'#000000', lit=col!=='#000000';
+    const d=document.createElement('div');
+    d.className='key'+(SEL===n?' sel':'');
+    d.style.background=lit?col:'#3c4048';
+    d.style.color=textOn(col,lit);
+    /* Palette open means colouring, so a key click picks the key to paint.
+       Otherwise the click opens the editor. Without this the palette can
+       never be aimed at one key -- the overlay covers the swatches. */
+    d.onclick=()=>{ if($('#ledarea').classList.contains('open')) pickForPaint(n);
+                    else openEditor(n); };
+    const cnt=(e.codes||[]).length;
+    /* A key face is 96px wide and clips at three lines, so `title` carries the
+       whole binding for the ones whose face cannot show it. */
+    const full=e.label==='NULL'?'':e.label;
+    if(full) d.title=`${CAT.t('pad.layer',{n:LAYER})} · ${i}: ${full}`;
+    d.innerHTML=`<span class="n">${i}</span>
+      ${cnt>1?`<span class="cnt">${cnt}</span>`:''}
+      <span class="lab">${esc(full)}</span>`;
+    K.appendChild(d);
+  }
+  const KN=$('#knobs');KN.innerHTML='';
+  const top=document.createElement('div');top.className='knobrow';
+  top.appendChild(knobEl(1,'s'));top.appendChild(knobEl(2,'s'));
+  KN.appendChild(top);KN.appendChild(knobEl(3,'m'));KN.appendChild(knobEl(4,'l'));
+}
+function knobEl(k,size){
+  const nm=a=>`knob${k}-${a}`;
+  const lab=a=>{const e=byName(nm(a));return e&&e.label!=='NULL'?e.label:'';};
+  /* Turn targets clip sooner than keys; the tooltip shows all of it. */
+  const tip=a=>{const v=lab(a);
+    return v?` title="${esc(nm(a))}: ${esc(v)}"`:'';};
+  const w=document.createElement('div');w.className='knobwrap';
+  w.innerHTML=`<div class="knobname">${esc(CAT.t('pad.knob',{n:k}))}</div>
+    <div class="knobline">
+      <div class="turn ${SEL===nm('CCW')?'sel':''}"${tip('CCW')} onclick="openEditor('${nm('CCW')}')">
+        <span class="ar">↺</span><span class="bd">${esc(lab('CCW'))}</span></div>
+      <div class="knob ${size} ${SEL===nm('Press')?'sel':''}"${tip('Press')}
+           onclick="openEditor('${nm('Press')}')">
+        <span class="press">${esc(lab('Press'))}</span></div>
+      <div class="turn ${SEL===nm('CW')?'sel':''}"${tip('CW')} onclick="openEditor('${nm('CW')}')">
+        <span class="ar">↻</span><span class="bd">${esc(lab('CW'))}</span></div>
+    </div>`;
+  return w;
+}
+
+/* sequence editor */
+function openEditor(name){
+  SEL=name;
+  const e=byName(name);
+  SEQ=[];
+  if(e && e.label!=='NULL'){
+    if(e.kind===3||e.kind===2){
+      SEQ=[{kind:e.kind===3?'mouse':'media',code:e.codes[0],
+            label:e.label,ms:0,
+            ...(e.kind===3&&e.mouse?{mouse:e.mouse}:{})}];
+    }else{
+      /* wire -> chips (spec 6): fold each run of modifier slots into the key
+         that follows; a trailing run stays its own chip. The delay comes
+         from the key slot (modifier slots are 0ms). */
+      let pend=[];
+      (e.codes||[]).forEach((c,i)=>{
+        const ms=(e.delays&&e.delays[i])||0;
+        if(isMod(c)){ pend.push(c); return; }
+        SEQ.push({kind:'key',code:c,label:hidLabel(c),ms,
+                  mods:sortMods(pend)});
+        pend=[];
+      });
+      if(pend.length){
+        // trailing modifiers: first is the chip, the rest ride as its mods
+        const head=pend[0], rest=pend.slice(1);
+        SEQ.push({kind:'key',code:head,label:hidLabel(head),ms:0,
+                  mods:sortMods(rest)});
+      }
+    }
+  }
+  $('#ovTitle').textContent=name;
+  UNDO=[]; REDO=[]; clearSel(); CARET=SEQ.length;
+  closeChipPopover();
+  /* The editor sets SEL so the palette's target line follows it, but does
+     not open the area -- the overlay covers it. */
+  renderSeq(); $('#ov').classList.add('open'); render(); syncLedTarget();
+  initPicker();                    // the inline panel is part of the editor
+  setTimeout(focusStrip,0);
+}
+function closeEditor(){ closeChipPopover(); closeCopyTo();
+  POP_RESELECT=-1; syncPickerHead();     // never leave the mode armed
+  $('#ov').classList.remove('open'); SEL=null; render(); syncLedTarget(); }
+function clearSeq(){ closeChipPopover();
+  pushUndo(); SEQ=[]; clearSel(); CARET=0; renderSeq();
+  focusStrip(); }
+
+/* The key's NAME, for keys the layout does not turn into a character.
+   Characters go through baseName()/CHARBASE instead. */
+function hidLabel(c){
+  if(CAT.MODS[c]) return CAT.MODS[c];
+  if(META.hidnames && META.hidnames[c]) return META.hidnames[c];
+  return '0x'+c.toString(16).toUpperCase();
+}
+const MAXSLOT=()=>META.max_codes||18;
+const isSpecial=()=>SEQ.length&&(SEQ[0].kind==='mouse'||SEQ[0].kind==='media');
+
+/* chip editor core. One SEQ row == one chip == 1..n wire slots. The strip is
+   rebuilt from SEQ on every mutation; there is no DOM-held state. */
+
+const MODNAMES={0xF1:'Ctrl',0xF2:'Shift',0xF3:'Alt',0xF4:'Win',
+                0xF5:'RCtrl',0xF6:'RShift',0xF7:'RAlt',0xF8:'RWin'};
+const MODORDER=[0xF1,0xF2,0xF3,0xF4,0xF5,0xF6,0xF7,0xF8];
+const isMod=c=>MODORDER.includes(c);
+/* Split for the always-visible row; both halves write the same eight
+   codes. */
+const MODS_LEFT=[0xF1,0xF2,0xF3,0xF4];
+const MODS_RIGHT=[0xF5,0xF6,0xF7,0xF8];
+const sortMods=a=>a.slice().sort((x,y)=>MODORDER.indexOf(x)-MODORDER.indexOf(y));
+
+/* Display name derived from `code`, never from `label` (spec 4).
+   CHARBASE/CHARSHIFT are built from META.chars so the JIS layout wins:
+   0x30 is `[` on this device even though HID calls it RBracket. */
+let CHARBASE={}, CHARSHIFT={};
+function buildCharMaps(){
+  CHARBASE={}; CHARSHIFT={};
+  for(const [ch,info] of Object.entries(META.chars||{})){
+    if(info.shift){ if(!(info.usage in CHARSHIFT)) CHARSHIFT[info.usage]=ch; }
+    else { if(!(info.usage in CHARBASE)) CHARBASE[info.usage]=ch; }
+  }
+  for(let i=0;i<26;i++){
+    const u=0x04+i;
+    if(!(u in CHARBASE))  CHARBASE[u]=String.fromCharCode(97+i);
+    if(!(u in CHARSHIFT)) CHARSHIFT[u]=String.fromCharCode(65+i);
+  }
+}
+/* base glyph / name for a key code, always lowercase for letters.
+   The layout table answers FIRST and CHARBASE is only the fallback: CHARBASE
+   is META.chars inverted, and the inversion is lossy where two usages type
+   the same character (JIS 0x87/0x89 both type `\`). The layout is keyed by
+   usage, so it cannot lose one. */
+function baseName(code){
+  const g=CAT.keyLabel(code,false);
+  if(g) return g;
+  if(code in CHARBASE) return CHARBASE[code];
+  if(isMod(code)) return MODNAMES[code];
+  return hidLabel(code);
+}
+/* the shifted glyph, if this code has one (`a`->`A`, `1`->`!`) */
+function shiftName(code){
+  return CAT.keyLabel(code,true)||CHARSHIFT[code]||null;
+}
+
+/* Chip display text, per spec 2.
+   - plain chip, no mods            -> base glyph            `a` `[` `Enter`
+   - plain chip, Shift only, and the code has a shifted glyph -> that glyph `A` `!`
+   - anything else with mods        -> explicit form, base ALWAYS lowercase
+                                       `Ctrl+c` `Ctrl+Shift+c` `Ctrl+Alt+Delete`
+   So an uppercase letter never appears inside a modifier chip: `A` can only
+   mean Shift+a, `Ctrl+c` can only mean Ctrl+c. */
+function chipText(r){
+  if(r.kind!=='key') return r.label;
+  const mods=sortMods(r.mods||[]);
+  if(isMod(r.code) && !mods.length) return MODNAMES[r.code];
+  if(!mods.length) return baseName(r.code);
+  if(mods.length===1 && mods[0]===0xF2){
+    const s=shiftName(r.code);
+    if(s) return s;                       // `A` / `!` -- Shift is in the glyph
+  }
+  return mods.map(m=>MODNAMES[m]).concat(baseName(r.code)).join('+');
+}
+const SUBDIG='₀₁₂₃₄₅₆₇₈₉';
+function costBadge(n){
+  if(n<=1) return '';
+  return String(n).split('').map(d=>SUBDIG[+d]).join('');
+}
+
+function clearSel(){ SELA=-1; SELB=-1; }
+const hasSel=()=>SELA>=0&&SELB>SELA;
+function setSel(a,b){ SELA=Math.max(0,Math.min(a,b));
+  SELB=Math.min(SEQ.length,Math.max(a,b)); if(SELB<=SELA) clearSel(); }
+
+function focusStrip(){ const i=$('#chipIn'); if(i) i.focus({preventScroll:true}); }
+function editorOpen(){ return $('#ov').classList.contains('open'); }
+
+function renderSeq(){ renderChips(); }
+
+/** The armed modifiers, drawn as a pending chip: [Ctrl+]. Not a real chip --
+ *  not in SEQ, not clickable or deletable, gone the moment a key is picked
+ *  or the modifier is disarmed. */
+function armedGhost(){
+  if(!ARMED.length) return '';
+  return `<span class="chip ghost" data-testid="armedghost" aria-hidden="true"
+    >${esc(ARMED.map(c=>MODNAMES[c]).join('+'))}+</span>`;
+}
+function renderChips(){
+  const S=$('#chipStrip'); if(!S) return;
+  S.innerHTML='';
+  const focused=document.activeElement===$('#chipIn');
+  S.classList.toggle('focus',focused);
+  if(!SEQ.length){
+    S.innerHTML='<span class="caret on" data-testid="caret" data-i="0"></span>'
+      +armedGhost()
+      +`<span class="ph">${esc(CAT.t('ed.placeholder'))}</span>`;
+  }else{
+    // cumulative cost decides where the 18-slot overflow starts (spec 7)
+    const max=MAXSLOT(); let acc=0; const over=[];
+    SEQ.forEach(r=>{ acc+=rowCost(r); over.push(acc>max); });
+    for(let i=0;i<=SEQ.length;i++){
+      const c=document.createElement('span');
+      const live=!hasSel()&&CARET===i;
+      c.className='caret'+(live?' on':'');
+      /* QA hook: every gap is caret-N, but the bare `caret` testid marks only
+         the LIVE gap. */
+      c.dataset.testid=live?'caret':('caret-'+i);
+      c.dataset.i=i;
+      S.appendChild(c);
+      /* An armed modifier shows as a ghost chip at the caret -- where the key
+         it is waiting for will land. */
+      if(live && ARMED.length) S.insertAdjacentHTML('beforeend',armedGhost());
+      if(i===SEQ.length) break;
+      const r=SEQ[i], cost=rowCost(r);
+      const sel=hasSel()&&i>=SELA&&i<SELB;
+      const special=r.kind!=='key';
+      const modOnly=r.kind==='key'&&isMod(r.code)&&!(r.mods||[]).length;
+      const d=document.createElement('span');
+      d.className='chip'+(sel?' sel':'')+(over[i]?' over':'')
+                 +(modOnly?' mod':'')+(special?' big':'');
+      d.dataset.testid='chip';
+      d.dataset.i=i;
+      if(sel) d.dataset.selected='1';
+      if(over[i]) d.dataset.over='1';
+      d.title=chipText(r);
+      d.innerHTML=(special
+          ?`<span class="kindtag">${esc(CAT.t(r.kind==='mouse'?'chip.mouse':'chip.media'))}</span>`
+          :'')
+        +`<span class="tx">${esc(chipText(r))}</span>`
+        +(cost>1?`<span class="cost" data-testid="cost">${costBadge(cost)}</span>`:'')
+        +(special?`<span class="kindtag">${esc(CAT.t('chip.solo'))}</span>`:'')
+        +((!special&&r.ms)?`<span class="ms">⏱${r.ms}</span>`:'');
+      d.onmousedown=ev=>{ev.stopPropagation();};
+      d.onclick=ev=>{ev.stopPropagation(); chipClick(i);};
+      S.appendChild(d);
+    }
+  }
+  renderMeter();
+  const sv=$('#saveBtn'); if(sv) sv.disabled=!validateSeq().ok;
+  positionInput();
+  syncPopover();
+  syncPickerHead();      // "N番目に挿入" tracks the caret
+}
+
+/* slot meter / cost accounting (spec 7). Yellow from 16 steps, red over the
+   limit. The per-chip red tint lives in renderChips(). */
+function WARNSLOT(){ return Math.max(1,MAXSLOT()-2); }   // 18 -> warn at 16
+function renderMeter(){
+  const used=seqCost(), max=MAXSLOT();
+  const el=$('#slotinfo');
+  if(el){
+    const v=validateSeq();
+    el.textContent=v.ok
+      ? CAT.t('ed.meter',{c:SEQ.length,u:used,m:max})
+      : v.why;
+    // over-limit wins over the 16+ warning; both are steps-driven, not text
+    el.className='slotinfo'+(used>max?' over':(used>=WARNSLOT()?' warn':''));
+  }
+  /* spec 7 補足文: only meaningful once modifiers add steps, i.e. total cost
+     exceeds the chip count. Exact wording is fixed. */
+  const nt=$('#slotnote');
+  if(nt) nt.textContent=(SEQ.length&&used>SEQ.length)
+    ? CAT.t('ed.meterNote'):'';
+}
+/* keep the invisible input glued to the caret so IME candidates land there */
+function positionInput(){
+  const inp=$('#chipIn'), S=$('#chipStrip'); if(!inp||!S) return;
+  const c=S.querySelector('.caret.on')||S.querySelector('.caret');
+  if(!c) return;
+  inp.style.left=(c.offsetLeft)+'px';
+  inp.style.top =(c.offsetTop)+'px';
+}
+
+/* undo (spec 10). Snapshot before every mutation; deep-copy so mods arrays
+   never alias. */
+function snap(){
+  return {SEQ:SEQ.map(r=>({...r,mods:(r.mods||[]).slice()})),
+          caret:CARET,sela:SELA,selb:SELB};
+}
+function restore(s){
+  SEQ=s.SEQ.map(r=>({...r,mods:(r.mods||[]).slice()}));
+  CARET=Math.min(s.caret,SEQ.length); SELA=s.sela; SELB=s.selb;
+  if(SELB>SEQ.length){ clearSel(); }
+}
+function pushUndo(){ UNDO.push(snap()); if(UNDO.length>200) UNDO.shift();
+  REDO=[]; }
+function undo(){ if(!UNDO.length) return; REDO.push(snap());
+  restore(UNDO.pop()); renderChips(); }
+function redo(){ if(!REDO.length) return; UNDO.push(snap());
+  restore(REDO.pop()); renderChips(); }
+
+/* The single insertion entry point (spec 4). EVERY path funnels through
+   here: typing, paste, the picker. Owns the fusion rule (spec 5) with both
+   guards, dedup, the standalone constraint, the 40-chip cap, the undo push
+   and the re-render.
+
+   row : {kind:'key'|'mouse'|'media', code:int, label?:str, ms?:int, mods?:[]}
+   at  : caret index 0..SEQ.length; defaults to the live caret.
+   returns true if SEQ changed. */
+function insertChip(row,at){
+  if(!row) return false;
+  if(at===undefined||at===null) at=CARET;
+  at=Math.max(0,Math.min(at|0,SEQ.length));
+  const kind=row.kind||'key';
+  const mods=sortMods(row.mods||[]);
+
+  // --- standalone constraint (spec 8): mouse/media replace the whole seq
+  if(kind!=='key'){
+    pushUndo();
+    SEQ=[{kind,code:row.code||0,label:row.label,ms:0,mods:[],
+          ...(row.mouse?{mouse:row.mouse}:{})}];
+    clearSel(); CARET=1; renderChips(); return true;
+  }
+  if(isSpecial()){
+    toast(CAT.t('toast.noCombine'));
+    return false;
+  }
+
+  // --- fusion (spec 5): a bare modifier folds into the chip on its right
+  if(isMod(row.code) && !mods.length){
+    const nxt=SEQ[at];
+    if(nxt){
+      if(nxt.kind!=='key'){                       // guard 2: mouse/media
+        toast(CAT.t('toast.noModsSpecial'));
+        return false;
+      }
+      if(isMod(nxt.code) && !(nxt.mods||[]).length){
+        // modifier in front of a bare modifier chip: merge them into one
+        if(nxt.code===row.code) return false;      // guard 1: dedup
+        pushUndo();
+        nxt.mods=sortMods([...(nxt.mods||[]),row.code]);
+        clearSel(); CARET=at+1; renderChips(); return true;
+      }
+      if((nxt.mods||[]).includes(row.code)) return false;  // guard 1: dedup
+      pushUndo();
+      nxt.mods=sortMods([...(nxt.mods||[]),row.code]);
+      clearSel(); CARET=at+1; renderChips(); return true;
+    }
+    // no following key -> stays a standalone modifier chip
+  }
+
+  /* Reverse fusion: a key landing immediately after bare modifier chips
+     absorbs them. The firmware always fuses the modifier slots preceding a
+     key, so a standalone modifier chip cannot survive a key to its right.
+     This is what makes Ctrl, then Alt, then Delete give Ctrl+Alt+Delete. */
+  if(!isMod(row.code)){
+    let a=at;
+    while(a>0){
+      const p=SEQ[a-1];
+      if(p&&p.kind==='key'&&isMod(p.code)&&!(p.mods||[]).length) a--; else break;
+    }
+    if(a<at){
+      const absorbed=SEQ.slice(a,at).map(r=>r.code);
+      const merged=sortMods([...new Set([...mods,...absorbed])]);
+      pushUndo();
+      SEQ.splice(a,at-a,{kind:'key',code:row.code,label:row.label,
+                         ms:row.ms||0,mods:merged});
+      clearSel(); CARET=a+1; renderChips(); return true;
+    }
+  }
+
+  if(SEQ.length>=MAXCHIPS){                        // spec 8: 41st is refused
+    // ruling: the rejection is never silent -- fixed wording
+    toast(CAT.t('toast.maxChips',{n:MAXCHIPS}));
+    return false;
+  }
+  pushUndo();
+  SEQ.splice(at,0,{kind:'key',code:row.code,label:row.label,
+                   ms:row.ms||0,mods:mods});
+  clearSel(); CARET=at+1; renderChips(); return true;
+}
+window.insertChip=insertChip;
+
+/* delete chips in [a,b); leaves the caret where they were */
+function deleteRange(a,b){
+  a=Math.max(0,a); b=Math.min(SEQ.length,b);
+  if(b<=a) return false;
+  pushUndo(); SEQ.splice(a,b-a); clearSel(); CARET=a; renderChips(); return true;
+}
+function replaceSelection(row){
+  if(!hasSel()) return insertChip(row,CARET);
+  const a=SELA;
+  pushUndo();
+  SEQ.splice(a,SELB-a); clearSel(); CARET=a;
+  // re-push would double-snapshot, so splice in without a second undo entry
+  const keep=UNDO.pop();
+  const changed=insertChip(row,a);
+  if(changed){ UNDO[UNDO.length-1]=keep; } else { UNDO.push(keep); renderChips(); }
+  return changed;
+}
+
+/* typing / IME */
+function typeText(txt){
+  if(!txt) return;
+  const bad=[]; let n=0, capped=false;
+  for(const ch of txt){
+    const r=charToRow(ch);
+    if(!r){ bad.push(ch); continue; }
+    if(SEQ.length>=MAXCHIPS){ capped=true; break; }
+    if(n===0 && hasSel()) replaceSelection(r); else insertChip(r,CARET);
+    n++;
+  }
+  if(bad.length) toast(CAT.t('toast.badChars',{c:[...new Set(bad)].join(' ')}));
+  if(capped) toast(CAT.t('toast.chipsCut',{n:MAXCHIPS}));
+}
+function toast(t){ msg(t,'err'); }
+
+/* chip popover (spec 9). Opened by Enter on a selection, or by a SECOND click
+   on an already selected chip. Edits go through the same SEQ mutation +
+   pushUndo + renderChips path as everything else.
+
+   POP_I is the chip index the panel is bound to, re-validated on every render
+   because undo/redo can shrink SEQ underneath an open panel. */
+let POP_I=-1, POP_RIGHT=false;
+const POPMODS=[[0xF1,'Ctrl'],[0xF2,'Shift'],[0xF3,'Alt'],[0xF4,'Win']];
+/* Spelled to match CAT.MODS, or the same key gets two names on one screen.
+   Not read from CAT: this is a top-level const and CAT arrives later, with
+   the dynamic import. */
+const POPRMODS=[[0xF5,'RCtrl'],[0xF6,'RShift'],[0xF7,'RAlt'],[0xF8,'RWin']];
+
+const popOpenFor=i=>POP_I===i&&$('#chippop').classList.contains('open');
+
+function closeChipPopover(){
+  const p=$('#chippop'); if(p) p.classList.remove('open');
+  POP_I=-1; POP_RIGHT=false;
+}
+function openChipPopover(i){
+  const r=SEQ[i];
+  if(!r){ closeChipPopover(); return; }
+  POP_I=i;
+  // open the 右▸ group already expanded if this chip uses a right-side mod
+  POP_RIGHT=(r.mods||[]).some(m=>m>=0xF5);
+  setSel(i,i+1);
+  renderChips();                       // paints selection + calls syncPopover
+  $('#chippop').classList.add('open');
+  drawPopover();
+  focusStrip();
+}
+window.openChipPopover=openChipPopover;
+
+/* re-render + reposition an open panel after any SEQ change */
+function syncPopover(){
+  const p=$('#chippop'); if(!p||!p.classList.contains('open')) return;
+  if(!SEQ[POP_I]){ closeChipPopover(); return; }
+  drawPopover();
+}
+
+function drawPopover(){
+  const p=$('#chippop'), r=SEQ[POP_I];
+  if(!p||!r) return;
+  const special=r.kind!=='key';
+  const mods=r.mods||[];
+  // an active right-side mod always keeps its toggle reachable
+  if(mods.some(m=>m>=0xF5)) POP_RIGHT=true;
+  const tog=(c,n)=>`<button class="modtog${mods.includes(c)?' on':''}"`
+    +` data-testid="popmod-${n}" data-nolabel`
+    +` onclick="popToggleMod(${c})">${esc(n)}</button>`;
+
+  let h=`<div class="pophd"><b>${esc(chipText(r))}</b>`
+    +`<span>${esc(CAT.t('chip.kindSteps',{
+        kind:CAT.t(special?(r.kind==='mouse'?'chip.mouse':'chip.media'):'chip.key'),
+        n:rowCost(r)}))}</span></div>`;
+
+  if(!special){
+    // spec 9: modifier toggles, right-hand side folded behind 右▸
+    h+=`<div class="poprow"><label>${esc(CAT.t('chip.mods'))}</label>`
+      +POPMODS.map(([c,n])=>tog(c,n)).join('')
+      +`<button class="rmore" data-nolabel onclick="popToggleRight()"`
+      +` data-testid="popright">${esc(CAT.t('chip.rightMods'))}`
+      +`${POP_RIGHT?'▾':'▸'}</button>`
+      +`<div class="rgroup${POP_RIGHT?' open':''}">`
+      +POPRMODS.map(([c,n])=>tog(c,n)).join('')+'</div></div>';
+    h+=`<div class="poprow"><label>${esc(CAT.t('chip.delay'))}</label>`
+      +`<input type="number" id="popMs" data-testid="popms" min="0" max="6000"`
+      +` step="50" value="${r.ms||0}" oninput="popSetMs(this.value)">`
+      +`<span class="hintline" style="margin:0">${esc(CAT.t('chip.msRange'))}</span></div>`;
+  }
+  h+='<div class="popfoot">'
+    +`<button data-nolabel onclick="popReselect()">${esc(CAT.t('chip.reselect'))}</button>`
+    +'<div class="grow"></div>'
+    +'<button class="danger" data-nolabel data-testid="popdel"'
+    +` onclick="popDelete()">${esc(CAT.t('chip.delete'))}</button>`
+    +`<button data-nolabel onclick="closeChipPopover()">${esc(CAT.t('chip.close'))}</button>`
+    +'</div>';
+  if(special) h+=`<div class="hintline">${esc(CAT.t('chip.soloNote'))}</div>`;
+  p.innerHTML=h;
+  placePopover();
+}
+
+/* anchor under the bound chip, clamped inside .chipwrap so it never clips */
+function placePopover(){
+  const p=$('#chippop'), S=$('#chipStrip');
+  if(!p||!S) return;
+  const c=S.querySelector(`.chip[data-i="${POP_I}"]`);
+  if(!c) return;
+  const w=p.offsetWidth||326;
+  const max=Math.max(0,S.offsetWidth-w-4);
+  p.style.left=Math.max(0,Math.min(c.offsetLeft,max))+'px';
+  p.style.top =(c.offsetTop+c.offsetHeight+6)+'px';
+}
+
+/* popover actions: each mutates SEQ, pushes undo, and re-renders. */
+function popToggleMod(code){
+  const r=SEQ[POP_I]; if(!r||r.kind!=='key') return;
+  pushUndo();
+  const m=(r.mods||[]).slice();
+  const at=m.indexOf(code);
+  if(at>=0) m.splice(at,1); else m.push(code);
+  r.mods=sortMods(m);
+  renderChips();                      // label + badge + meter + syncPopover
+}
+/* The disclosure may not hide an ACTIVE right-side toggle: the chip label
+   would show RCtrl with no way to switch it off. Collapsing is refused while
+   any right mod is set. */
+function popToggleRight(){
+  const r=SEQ[POP_I];
+  const usesRight=r&&(r.mods||[]).some(m=>m>=0xF5);
+  POP_RIGHT=usesRight?true:!POP_RIGHT;
+  drawPopover();
+}
+function popSetMs(v){
+  const r=SEQ[POP_I]; if(!r||r.kind!=='key') return;
+  let n=parseInt(v,10); if(!isFinite(n)) n=0;
+  n=Math.max(0,Math.min(6000,n));
+  if(n===(r.ms||0)) return;
+  pushUndo(); r.ms=n; renderChips();
+}
+function popDelete(){
+  const i=POP_I; closeChipPopover();
+  deleteRange(i,i+1); focusStrip();
+}
+/* 「一覧から選び直す」: a transient "reselect" mode on the picker panel. The
+   next pick swaps only the key code -- mods and ms survive (spec 9). */
+let POP_RESELECT=-1;
+function popReselect(){
+  const i=POP_I;
+  if(!SEQ[i]) return;                   // nothing to swap -> never arm the mode
+  POP_RESELECT=i;
+  closeChipPopover();
+  syncPickerHead();
+  const p=$('#pkPanel'); if(p&&p.scrollIntoView) p.scrollIntoView({block:'nearest'});
+  const s=$('#psearch'); if(s){ s.value=''; CANDS=[]; CSEL=0; renderCands(''); s.focus(); }
+}
+/* 「やめる」 and every other route out of the mode. Idempotent, so the banner
+   can never get stuck. */
+function cancelReselect(){
+  POP_RESELECT=-1; syncPickerHead(); focusStrip();
+}
+/* Called from the picker paths when a reselect is pending; returns true if it
+   consumed the pick. This replaces a row, so insertChip stays the only
+   insertion path. */
+function applyReselect(kind,code,label){
+  const i=POP_RESELECT; POP_RESELECT=-1;
+  const r=SEQ[i];
+  if(!r){ syncPickerHead(); return false; }   // stale index -> fall back to insert
+  pushUndo();
+  if(kind!=='key'){
+    // mouse/media are standalone: the whole sequence collapses to it
+    SEQ=[{kind,code:code||0,label,ms:0,mods:[]}];
+    clearSel(); CARET=1; renderChips(); return true;
+  }
+  if(r.kind!=='key'){                 // was mouse/media, now a plain key
+    SEQ[i]={kind:'key',code,label,ms:0,mods:[]};
+  }else{
+    SEQ[i]={kind:'key',code,label,ms:r.ms||0,mods:sortMods(r.mods||[])};
+  }
+  setSel(i,i+1); renderChips();
+  openChipPopover(i);
+  return true;
+}
+window.addEventListener('resize',()=>{ if(POP_I>=0) placePopover(); });
+
+/* interaction. A single click SELECTS only; a second click on an already
+   selected chip opens the popover (Enter does too, spec 3). */
+function chipClick(i){
+  const already=hasSel()&&SELA===i&&SELB===i+1&&!popOpenFor(i);
+  setSel(i,i+1);
+  renderChips(); focusStrip();
+  if(already) openChipPopover(i);
+}
+function stripMouseDown(ev){
+  // clicking empty strip space parks the caret at the nearest gap
+  const S=$('#chipStrip');
+  const carets=[...S.querySelectorAll('.caret')];
+  let best=SEQ.length, bd=Infinity;
+  carets.forEach((c,i)=>{
+    const r=c.getBoundingClientRect();
+    const d=Math.abs(ev.clientX-r.left)+Math.abs(ev.clientY-(r.top+r.height/2))*3;
+    if(d<bd){ bd=d; best=i; }
+  });
+  closeChipPopover();
+  clearSel(); CARET=best; renderChips();
+  ev.preventDefault(); focusStrip();
+}
+
+function chipKey(ev){
+  if(!editorOpen()) return;
+  const k=ev.key, N=SEQ.length;
+  const stop=()=>{ev.preventDefault(); ev.stopPropagation();};
+
+  /* An open popover is bound to one chip, so anything moving the caret or
+     selection makes it stale. Esc and Enter handle themselves below. */
+  if(POP_I>=0 && k!=='Escape' && k!=='Enter') closeChipPopover();
+
+  if(ev.ctrlKey||ev.metaKey){
+    const lk=k.toLowerCase();
+    if(lk==='z'){ stop(); ev.shiftKey?redo():undo(); return; }
+    if(lk==='y'){ stop(); redo(); return; }
+    if(lk==='a'){ stop(); if(N){ setSel(0,N); renderChips(); } return; }
+    return;                                   // let Ctrl+C/V etc. through
+  }
+  if(ev.altKey){
+    if(k==='ArrowLeft'||k==='ArrowRight'){     // reorder the selection
+      stop();
+      if(!hasSel()) return;
+      const d=k==='ArrowLeft'?-1:1;
+      const a=SELA,b=SELB;
+      if(d<0&&a===0) return;
+      if(d>0&&b===N) return;
+      pushUndo();
+      const cut=SEQ.splice(a,b-a);
+      const at=a+d;
+      SEQ.splice(at,0,...cut);
+      setSel(at,at+cut.length); renderChips();
+    }
+    return;
+  }
+
+  if(k==='ArrowLeft'||k==='ArrowRight'){
+    stop();
+    const d=k==='ArrowLeft'?-1:1;
+    if(ev.shiftKey){
+      // Shift+arrows grow a range; the caret is the moving edge
+      let a,b;
+      if(hasSel()){ a=SELA; b=SELB;
+        if(CARET<=a){ a=Math.max(0,a+d); CARET=a; }
+        else { b=Math.min(N,b+d); CARET=b; }
+      }else{
+        if(d<0){ a=Math.max(0,CARET-1); b=CARET; CARET=a; }
+        else   { a=CARET; b=Math.min(N,CARET+1); CARET=b; }
+      }
+      setSel(a,b);
+    }else if(hasSel()){
+      CARET=d<0?SELA:SELB; clearSel();        // collapse to the near gap
+    }else{
+      CARET=Math.max(0,Math.min(N,CARET+d));
+    }
+    renderChips(); return;
+  }
+  if(k==='Home'||k==='End'){
+    stop();
+    const t=k==='Home'?0:N;
+    if(ev.shiftKey){ const anc=hasSel()?(CARET<=SELA?SELB:SELA):CARET;
+      setSel(Math.min(anc,t),Math.max(anc,t)); CARET=t; }
+    else { clearSel(); CARET=t; }
+    renderChips(); return;
+  }
+  if(k==='Backspace'){
+    stop();
+    if(hasSel()) deleteRange(SELA,SELB);
+    else if(CARET>0) deleteRange(CARET-1,CARET);
+    return;
+  }
+  if(k==='Delete'){
+    stop();
+    if(hasSel()) deleteRange(SELA,SELB);
+    else if(CARET<N) deleteRange(CARET,CARET+1);
+    return;
+  }
+  if(k==='Escape'){
+    stop();
+    // Esc peels one layer at a time: reselect mode, popover, selection, focus
+    if(POP_RESELECT>=0){ cancelReselect(); return; }
+    if(POP_I>=0){ const i=POP_I; closeChipPopover(); setSel(i,i+1);
+      renderChips(); return; }
+    if(hasSel()){ CARET=SELA; clearSel(); renderChips(); }
+    else { $('#chipIn').blur(); renderChips(); }
+    return;
+  }
+  /* Enter / Tab / Space are content here, not commands, so they insert their
+     own chip. Save is button-only (spec 3). Enter on a selection opens the
+     popover instead. */
+  if(k==='Enter'||k==='Tab'||k===' '||k==='Spacebar'){
+    stop();
+    if(k==='Enter'&&hasSel()){
+      const i=SELA;
+      if(typeof openChipPopover==='function'){ try{ openChipPopover(i); }catch(e){} }
+      return;
+    }
+    const code=k==='Enter'?0x28:k==='Tab'?0x2B:0x2C;
+    const row={kind:'key',code,label:hidLabel(code),ms:0,mods:[]};
+    if(hasSel()) replaceSelection(row); else insertChip(row,CARET);
+    return;
+  }
+  // printable single characters
+  if(k.length===1&&!ev.ctrlKey&&!ev.metaKey&&!ev.altKey){
+    stop();
+    const r=charToRow(k);
+    if(!r){ toast(CAT.t('toast.badChars',{c:k})); return; }
+    if(hasSel()) replaceSelection(r); else insertChip(r,CARET);
+    return;
+  }
+}
+
+/* IME: wait for compositionend, then one confirmed char per chip (spec 3) */
+let COMPOSING=false;
+function bindChipInput(){
+  const inp=$('#chipIn'); if(!inp||inp.dataset.bound) return;
+  inp.dataset.bound='1';
+  inp.addEventListener('keydown',ev=>{ if(COMPOSING) return; chipKey(ev); });
+  inp.addEventListener('compositionstart',()=>{COMPOSING=true;});
+  inp.addEventListener('compositionend',ev=>{
+    COMPOSING=false; inp.value='';
+    const t=ev.data||'';
+    if(hasSel()&&t){ const first=charToRow(t[0]);
+      if(first){ replaceSelection(first); typeText(t.slice(1)); return; } }
+    typeText(t);
+  });
+  inp.addEventListener('input',()=>{ if(!COMPOSING) inp.value=''; });
+  inp.addEventListener('focus',()=>{ $('#chipStrip').classList.add('focus');
+    renderChips(); });
+  inp.addEventListener('blur',()=>{ $('#chipStrip').classList.remove('focus'); });
+  inp.addEventListener('paste',ev=>{
+    ev.preventDefault();
+    const t=(ev.clipboardData||window.clipboardData).getData('text')||'';
+    pasteText(t);
+  });
+}
+/* paste: plain text -> chips, truncated at the 40-chip cap (spec 8) */
+function pasteText(t){
+  if(!t) return;
+  const chars=[...t];
+  const room=MAXCHIPS-SEQ.length+(hasSel()?SELB-SELA:0);
+  const bad=[];
+  const rows=[];
+  for(const ch of chars){
+    const r=charToRow(ch);
+    if(r) rows.push(r); else bad.push(ch);
+  }
+  const take=rows.slice(0,Math.max(0,room));
+  const cut=rows.length>take.length;
+  if(hasSel()&&take.length){ replaceSelection(take[0]); take.shift(); }
+  else if(hasSel()){ deleteRange(SELA,SELB); }
+  take.forEach(r=>insertChip(r,CARET));
+  if(bad.length) toast(CAT.t('toast.badChars',{c:[...new Set(bad)].join(' ')}));
+  else if(cut) toast(CAT.t('toast.chipsCut',{n:MAXCHIPS}));
+}
+
+/* What makes a sequence unwritable. A trailing modifier is allowed:
+   Win-alone is a legal binding (start menu). */
+const MODSET=new Set([0xF1,0xF2,0xF3,0xF4,0xF5,0xF6,0xF7,0xF8]);
+function validateSeq(){
+  const n=SEQ.length, max=MAXSLOT(), cost=seqCost();
+  if(!n) return {ok:false,why:CAT.t('ed.nothingChosen')};
+  if(cost>max) return {ok:false,
+    why:CAT.t('ed.overBudget',{c:cost,m:max})};
+  const sp=SEQ.filter(x=>x.kind!=='key');
+  if(sp.length&&n>1)
+    return {ok:false,why:CAT.t('toast.noCombine')};
+  return {ok:true};
+}
+
+/* Turn typed text into steps. "A" costs two slots (Shift + a) because the
+   firmware stores modifiers as inline pseudo-usages, not as a bitmask. */
+/* A row is {kind,code,label,ms,mods:[0xF1..]}: modifiers belong to the row and
+   are flattened into separate slots only when writing to the device. */
+const MODLIST=[[0xF1,'Ctrl'],[0xF2,'Shift'],[0xF3,'Alt'],[0xF4,'Win']];
+function rowCost(r){ return 1+(r.mods?r.mods.length:0); }
+function seqCost(){ return SEQ.reduce((n,r)=>n+rowCost(r),0); }
+function toggleMod(i,code){
+  const r=SEQ[i]; if(!r||r.kind!=='key') return;
+  r.mods=r.mods||[];
+  const at=r.mods.indexOf(code);
+  if(at>=0) r.mods.splice(at,1); else r.mods.push(code);
+  r.mods.sort((a,b)=>a-b);
+  renderSeq();
+}
+/* Flatten rows into the wire order the firmware expects: mods, then the key. */
+function flatten(){
+  const out=[];
+  for(const r of SEQ){
+    for(const m of (r.mods||[]))
+      out.push({kind:'key',code:m,label:MODS_NAME(m),ms:0});
+    out.push({kind:r.kind,code:r.code,label:r.label,ms:r.ms||0});
+  }
+  return out;
+}
+function MODS_NAME(c){ const f=MODLIST.find(m=>m[0]===c); return f?f[1]:hidLabel(c); }
+
+function charToRow(ch){
+  const info=(META.chars||{})[ch];
+  if(info) return {kind:'key',code:info.usage,label:ch,ms:0,
+                   mods:info.shift?[0xF2]:[]};
+  const lo=ch.toLowerCase();
+  if(lo>='a'&&lo<='z')
+    return {kind:'key',code:0x04+(lo.charCodeAt(0)-97),label:lo,ms:0,
+            mods:ch!==lo?[0xF2]:[]};
+  if(ch===' ') return {kind:'key',code:0x2C,label:'Space',ms:0,mods:[]};
+  return null;
+}
+
+/* searchable catalog. Every entry carries English + Japanese aliases. `pri`
+   breaks ties: plain characters outrank modifiers, so "w" offers w before
+   Windows. */
+let CATALOG=[];
+function buildCatalog(){
+  const C=[];
+  /* `name` is what pickSpecial() resolves against; `label` is what the row
+     shows. Passing the label as the name makes Japanese rows unpickable. */
+  const add=(label,kind,code,alias,pri,badge,mods,name)=>
+    C.push({label,kind,code,alias:alias.map(a=>a.toLowerCase()),pri,badge,
+            mods:mods||[],name:name||label});
+
+  // plain characters -- highest priority, so "a" finds a before Alt
+  for(const [ch,info] of Object.entries(META.chars||{})){
+    if(info.shift) continue;
+    add(ch,'key',info.usage,[ch,'char '+ch],0,'');
+  }
+  // letters/digits by name even when chars{} is sparse
+  'abcdefghijklmnopqrstuvwxyz'.split('').forEach((c,i)=>{
+    if(!C.some(e=>e.label===c)) add(c,'key',0x04+i,[c],0,'');
+  });
+  /* SHIFTED glyphs (`A`, `!`, `?`): 2 slots, so the ₂ badge and mods:[Shift].
+     pri 0 keeps them with the plain characters -- searching "A" must find
+     `A`, not Alt. scoreEntry() lowercases the query, so `A` and `a` collide
+     by design and are separated by the pri tiebreak; keep pri distinct. */
+  for(const [ch,info] of Object.entries(META.chars||{})){
+    if(!info.shift) continue;
+    add(ch,'key',info.usage,[ch,'char '+ch],1,'₂',[0xF2]);
+  }
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach((c,i)=>{
+    if(!C.some(e=>e.label===c)) add(c,'key',0x04+i,[c],1,'₂',[0xF2]);
+  });
+  // modifiers
+  [['Ctrl',0xF1,['ctrl','control','コントロール','せいぎょ']],
+   ['Shift',0xF2,['shift','シフト','しふと']],
+   ['Alt',0xF3,['alt','オルト','あると']],
+   ['Win',0xF4,['win','windows','ウィンドウズ','スタート','meta','super','ウィン']],
+   ['RCtrl',0xF5,['rctrl','right ctrl','みぎctrl','右ctrl','右コントロール']],
+   ['RShift',0xF6,['rshift','right shift','みぎshift','右shift','右シフト']],
+   ['RAlt',0xF7,['ralt','right alt','みぎalt','右alt','右オルト']],
+   ['RWin',0xF8,['rwin','right win','みぎwin','右win','右ウィン']]]
+   .forEach(([n,c,a])=>add(n,'key',c,a,2,CAT.t('pk.badgeMod')));
+  // F13-F24
+  for(let i=0;i<12;i++) add('F'+(i+13),'key',0x68+i,['f'+(i+13)],1,'');
+  // navigation / editing
+  [['↑',0x52,['up','うえ','じょう','uparrow','やじるし','↑']],
+   ['↓',0x51,['down','した','downarrow','やじるし','↓']],
+   ['←',0x50,['left','ひだり','leftarrow','やじるし','←']],
+   ['→',0x4F,['right','みぎ','rightarrow','やじるし','→']],
+   ['Home',0x4A,['home','ホーム']],['End',0x4D,['end','エンド']],
+   ['PageUp',0x4B,['pageup','pgup','ページアップ']],
+   ['PageDown',0x4E,['pagedown','pgdn','ページダウン']],
+   ['Insert',0x49,['insert','ins','インサート']],
+   ['Delete',0x4C,['delete','del','デリート','さくじょ']],
+   ['Esc',0x29,['esc','escape','エスケープ']],
+   ['Tab',0x2B,['tab','タブ']],
+   ['Enter',0x28,['enter','return','エンター','かいぎょう']],
+   ['Backspace',0x2A,['backspace','bs','バックスペース']],
+   ['Space',0x2C,['space','スペース','くうはく']],
+   ['CapsLock',0x39,['capslock','caps','キャップス']],
+   ['PrintScreen',0x46,['printscreen','prtsc','プリントスクリーン']],
+   ['ScrollLock',0x47,['scrolllock','スクロールロック']],
+   ['Pause',0x48,['pause','ポーズ']]]
+   .forEach(([n,c,a])=>add(n,'key',c,a,1,''));
+  // JIS-only keys
+  [['ろ \_',0x87,['ro','ろ','backslash']],
+   ['￥ ¥|',0x89,['yen','￥','¥','えん']],
+   ['かな',0x88,['kana','かな','ひらがな']],
+   ['変換',0x8A,['henkan','へんかん','変換']],
+   ['無変換',0x8B,['muhenkan','むへんかん','無変換']],
+   ['半角/全角',0x35,['hankaku','zenkaku','はんかく','ぜんかく','全角']]]
+   .forEach(([n,c,a])=>add(n,'key',c,a,1,''));
+  /* mouse / media -- standalone only. Use the same label the button shows,
+     and take the Japanese words as search terms, or the search answers
+     "bass" with BassDown while the button reads 低音−. */
+  CAT.mouseActions().forEach(a=>
+    add(a.label,'mouse',0,
+        [a.label,a.name,...(CAT.MOUSE_ALIASES[a.name]||[]),
+         'mouse','マウス','まうす','クリック'],
+        3,CAT.t('pk.badgeSolo'),[],a.name));
+  CAT.mediaList().forEach(m=>
+    add(m.label,'media',0,
+        [m.label,m.name,...(m.alias||[]),'media','メディア'],
+        3,CAT.t('pk.badgeSolo'),[],m.name));
+
+  CATALOG=C;
+}
+
+/* score a catalog entry against the query; null = no match */
+function scoreEntry(e,q){
+  let best=null;
+  for(const a of e.alias){
+    let s=null;
+    if(a===q) s=0;                       // exact
+    else if(a.startsWith(q)) s=1;        // prefix
+    // substring only at a word boundary, so "a" does not drag in "arrow up"
+    else if(a.split(/[\s\-_]+/).some(w=>w.startsWith(q))) s=2;
+    if(s!==null && (best===null||s<best)) best=s;
+  }
+  if(best===null) return null;
+  return best*10 + e.pri;                // exactness dominates, pri breaks ties
+}
+function searchCatalog(q){
+  q=q.trim().toLowerCase();
+  if(!q) return [];
+  return CATALOG
+    .map(e=>({e,s:scoreEntry(e,q)}))
+    .filter(x=>x.s!==null)
+    .sort((a,b)=>a.s-b.s || a.e.label.length-b.e.label.length)
+    .slice(0,40).map(x=>x.e);
+}
+
+let CANDS=[], CSEL=0;
+function onSearch(){
+  const q=$('#psearch').value;
+  CANDS=searchCatalog(q); CSEL=0;
+  renderCands(q);
+}
+function renderCands(q){
+  const L=$('#cands'), box=$('#psearch');
+  if(!q.trim()){ L.innerHTML=''; box.classList.remove('bad'); return; }
+  if(!CANDS.length){
+    L.innerHTML='<div class="nohit" style="grid-column:1/-1">'
+                +esc(CAT.t('pk.noMatch'))+'</div>';
+    box.classList.add('bad'); return;              // invalid input -> red
+  }
+  box.classList.remove('bad');
+  // the grid must exist before its column count can be read, so seed it first
+  L.innerHTML='<i></i>';
+  const COLS=colCount(L);
+  const ROWS=Math.ceil(CANDS.length/COLS);
+  const order=[];
+  for(let r=0;r<ROWS;r++)
+    for(let c=0;c<COLS;c++){const k=c*ROWS+r; if(k<CANDS.length) order.push(k);}
+  L.innerHTML=order.map(oi=>{const e=CANDS[oi], i=oi;
+    const bc=e.badge===CAT.t('pk.badgeMod')?'mod'
+            :e.badge===CAT.t('pk.badgeSolo')?'sp':'';
+    return `<button class="${i===CSEL?'on':''}" onclick="takeCand(${i})">
+      <span class="nm">${esc(e.label)}</span>
+      ${e.badge?`<span class="cbadge ${bc}">${e.badge}</span>`:''}
+      <span class="meta">${e.kind==='key'
+        ?'0x'+e.code.toString(16).toUpperCase():e.kind}</span></button>`;
+  }).join('');
+}
+function colCount(L){
+  const t=getComputedStyle(L).gridTemplateColumns;
+  const n=t&&t!=='none'?t.trim().split(/\s+/).length:1;
+  return Math.max(1,n);
+}
+window.addEventListener('resize',()=>{
+  // the panel is always live while the editor is open; reflow its columns
+  if($('#ov').classList.contains('open')) renderCands($('#psearch').value);
+});
+function searchKey(ev){
+  if(ev.key==='Escape'){                 // an escape hatch from inside the box
+    ev.preventDefault();
+    if(POP_RESELECT>=0){ cancelReselect(); return; }
+    $('#psearch').value=''; CANDS=[]; CSEL=0; renderCands(''); focusStrip();
+    return;
+  }
+  if(!CANDS.length) return;
+  const n=CANDS.length, COLS=colCount($('#cands'));
+  const ROWS=Math.ceil(n/COLS);
+  const move=d=>{CSEL=(CSEL+d+n)%n;renderCands($('#psearch').value);ev.preventDefault();};
+  if(ev.key==='ArrowDown')      move(1);          // down a column
+  else if(ev.key==='ArrowUp')   move(-1);
+  else if(ev.key==='ArrowRight')move(ROWS);       // across to the next column
+  else if(ev.key==='ArrowLeft') move(-ROWS);
+  else if(ev.key==='Enter'){takeCand(CSEL);ev.preventDefault();}
+}
+function takeCand(i){
+  const e=CANDS[i]; if(!e) return;
+  if(e.kind!=='key') pickSpecial(e.kind,e.name);
+  else pickKey(e.code,e.label,e.mods);
+}
+
+/* ---------- inline key picker panel ----------
+   The picker is no longer a modal. It is a permanent panel inside the editor
+   sheet, below the sequence buttons. There is exactly ONE picker UI. Selections
+   still funnel through insertChip() (spec 4); nothing about insertion changed,
+   only the host element. */
+/* The three blocks are the device's own kinds: a chip is a key, a mouse
+   action or a media action, and never two of those (insertChip enforces it).
+   Modifiers are deliberately NOT here -- they are a state that attaches to
+   whichever of these you pick, so they live in the always-visible row above.
+   CHIPSPEC 14. */
+const PBLOCKS=[['key','pk.keyboard'],['mouse','pk.mouse'],['media','pk.media']];
+/* called once per editor open: (re)builds the panel and clears the search */
+function initPicker(){
+  PICK_ROW=CARET; PSHIFT=false; ARMED=[];
+  if(!CATALOG.length) buildCatalog();
+  $('#psearch').value=''; CANDS=[]; CSEL=0; renderCands('');
+  $('#jumps').innerHTML=PBLOCKS.map(([k,key])=>
+    `<button id="jm_${k}" onclick="jumpTo('${k}')">${esc(CAT.t(key))}</button>`).join('');
+  renderModRow(); renderBlocks();
+  POP_RESELECT=-1; syncPickerHead();
+}
+
+/* the always-visible modifier row (CHIPSPEC 14.2). Armed modifiers are a
+   pending state, not chips: they ride along with the next pick and are then
+   cleared. Arming Shift also flips the character grid to its shifted glyphs,
+   so there is one Shift, not two. */
+let ARMED=[];               // modifier codes waiting for the next pick
+
+function renderModRow(){
+  const R=$('#modrow'); if(!R) return;
+  const btn=c=>`<button data-testid="mod${c.toString(16)}"
+     class="${ARMED.includes(c)?'on':''}" aria-pressed="${ARMED.includes(c)}"
+     onclick="toggleArm(${c})">${MODNAMES[c]}</button>`;
+  R.innerHTML=`<span class="mlab">${esc(CAT.t('pk.modsLabel'))}</span>`
+    +MODS_LEFT.map(btn).join('')
+    /* The right-hand four are simply shown, not behind a toggle. */
+    +`<div class="rgroup open">`
+    +MODS_RIGHT.map(btn).join('')+'</div>'
+    +`<span class="mhint">${ARMED.length
+        ? CAT.t('pk.modsArmed',{m:esc(ARMED.map(c=>MODNAMES[c]).join('+'))})
+        : CAT.t('pk.modsIdle')
+      }</span>`;
+}
+function toggleArm(code){
+  /* Arming assumes modifier first, then the key. In three cases the modifier
+     belongs to the sequence NOW instead:
+
+       caret on a key       caret before v plus Ctrl means Ctrl+v
+       caret on mouse/media fusion is impossible; say so rather than arm
+       nothing to pick yet  Win alone is a real binding (the Start menu)
+
+     Hand these to insertChip and let its fusion rule decide. */
+  if(!ARMED.includes(code) && !hasSel()){
+    const at=SEQ[CARET];
+    if(at && (at.kind==='key' || at.kind==='mouse' || at.kind==='media')){
+      pickKey(code, MODNAMES[code]);
+      return;
+    }
+    /* Nothing to fuse onto. Ctrl, Shift and Alt ARM: they are the three the
+       device can carry on a mouse binding, so "Ctrl, then ホイール↑" must
+       work on an empty key. Inserting a lone Ctrl chip instead loses it
+       silently -- a mouse action REPLACES the sequence.
+
+       Win and the right-hand four keep inserting: they cannot ride a mouse
+       binding, so a lone press means the binding itself. */
+    const ARMS_ALONE = [0xF1,0xF2,0xF3];
+    if(!SEQ.length && !ARMS_ALONE.includes(code)){
+      pickKey(code, MODNAMES[code]); return;
+    }
+  }
+  ARMED=ARMED.includes(code) ? ARMED.filter(c=>c!==code)
+                             : sortMods([...ARMED,code]);
+  renderModRow();
+  renderChips();   // the ghost chip at the caret follows the armed state
+  // Shift changes what the character buttons say, so the board must follow
+  if(code===0xF2) { PSHIFT=ARMED.includes(0xF2); renderBlocks(); }
+  else renderBlocks();   // the mouse block's note names the armed modifier
+}
+/* Consume the armed modifiers: returns them and clears the row, so the same
+   arming cannot leak into the pick after next. */
+function takeArmed(){
+  const a=ARMED;
+  if(a.length){ ARMED=[]; PSHIFT=false; renderModRow(); renderBlocks(); renderChips(); }
+  return a;
+}
+/* Armed modifiers with no key: a standalone modifier chip (Win by itself
+   opens the Start menu). */
+function insertArmedAlone(){
+  const a=takeArmed(); if(!a.length) return false;
+  for(const c of a) pickKey(c,MODNAMES[c]);
+  return true;
+}
+function jumpTo(k){
+  const el=$('#blk_'+k); if(!el) return;
+  PBLOCKS.forEach(([t])=>$('#jm_'+t)?.classList.toggle('on',t===k));
+  el.scrollIntoView({block:'start',behavior:'smooth'});
+}
+/* the panel header tells the user where the next pick lands, and shows the
+   reselect banner when a chip is being swapped */
+function syncPickerHead(){
+  const m=$('#pkMode'); if(!m) return;
+  if(POP_RESELECT>=0){
+    m.classList.add('on');
+    $('#pkModeText').textContent=CAT.t('pk.reselecting',{n:POP_RESELECT+1});
+    $('#pkFor').textContent=CAT.t('pk.reselectNote');
+  }else{
+    m.classList.remove('on');
+    /* Only the reselect banner: it is a MODE and nothing else says so. */
+    $('#pkFor').textContent='';
+  }
+}
+/* 文字・数字 tab. The grid is derived from META.chars, NEVER from HID key
+   names: HID 0x30 is called "RBracket" while a JIS board types `[` with it.
+
+   Shift is a TOGGLE over the whole grid, not a second set of buttons: a glyph
+   and its shifted partner are the same physical key, and with the toggle on
+   EVERY button costs 2 slots, which one banner states once. */
+let PSHIFT=false;
+function charGlyphs(shift){
+  const map=shift?CHARSHIFT:CHARBASE;         // built from META.chars
+  const letters=[],digits=[],syms=[];
+  const seen=new Set();
+  for(const [codeStr,ch] of Object.entries(map)){
+    const code=+codeStr;
+    if(ch===undefined||ch===null||ch==='') continue;
+    if(seen.has(ch)) continue; seen.add(ch);
+    if(code>=0x04&&code<=0x1D) letters.push([code,ch]);
+    else if(code>=0x1E&&code<=0x27) digits.push([code,ch]);
+    else syms.push([code,ch]);
+  }
+  const byCode=(a,b)=>a[0]-b[0];
+  letters.sort(byCode);
+  // 1..9 then 0 -- 0x27 is `0` and must read last, as it does on the board
+  digits.sort(byCode);
+  syms.sort(byCode);
+  return {letters,digits,syms};
+}
+/* Shift is one state shared with the modifier row; this arms or disarms it
+   there. */
+function setPShift(on){
+  const want=!!on;
+  if(want!==ARMED.includes(0xF2)) toggleArm(0xF2);
+}
+/* one delegated handler: glyphs include ' " & < > which cannot be embedded
+   safely in an inline onclick= (esc() does not escape quotes) */
+function pgridClick(ev){
+  const b=ev.target.closest('button[data-ch]');
+  if(!b) return;
+  pickChar(b.getAttribute('data-ch'));
+}
+/* Render all three blocks at once: the jump tabs move the viewport, they do
+   not hide anything. Blocks the current sequence cannot accept are dimmed
+   rather than removed. */
+function renderBlocks(){
+  const B=$('#pblocks'); if(!B) return;
+  const special=isSpecial();
+  const b=(lab,fn,cls='')=>`<button class="${cls}" onclick="${fn}">${esc(lab)}</button>`;
+  const cb=ch=>`<button class="chbtn" data-ch="${esc(ch)
+                 .replace(/"/g,'&quot;')}">${esc(ch)}</button>`;
+  const grp=(title,list)=>list.length
+    ? `<div class="pgroup"><span class="pglab">${title}</span>`
+      +list.map(([,ch])=>cb(ch)).join('')+'</div>' : '';
+
+  const {letters,digits,syms}=charGlyphs(PSHIFT);
+  /* Headings name what the buttons PRODUCE, not the physical row: with Shift
+     armed the number row types ! " #. */
+  const digLab=CAT.t(PSHIFT?'pk.digitsShift':'pk.digits');
+  const symLab=CAT.t(PSHIFT?'pk.symbolsShift':'pk.symbols');
+
+  const nav=[['↑',0x52],['↓',0x51],['←',0x50],['→',0x4F],
+    ['Home',0x4A],['End',0x4D],['PageUp',0x4B],['PageDown',0x4E],
+    ['Insert',0x49],['Delete',0x4C],['Esc',0x29],['Tab',0x2B],
+    ['Enter',0x28],['Backspace',0x2A],['Space',0x2C],['CapsLock',0x39],
+    ['PrintScreen',0x46],['ScrollLock',0x47],['Pause',0x48]];
+  const jis=[['ろ \_',0x87],['￥ ¥|',0x89],['かな',0x88],
+             ['変換',0x8A],['無変換',0x8B],['半角/全角',0x35]];
+
+  const keyBlock=
+    /* No headings -- キーボード / マウス / メディア are in the fixed half
+       above. The ids stay so the tabs can still jump here. */
+    `<div class="pblock${special?' dim':''}" id="blk_key">`
+    +`<div class="pblab">${esc(CAT.t('pk.keyboard'))}</div>`
+    +(special?`<div class="pnote">${esc(CAT.t('pk.blockedSpecial'))}</div>`:'')
+    +'<div class="pgrid" id="pgrid" data-testid="pgrid">'
+    +'<div class="pnote">'+CAT.t('pk.charsNote')
+    +(PSHIFT?CAT.t('pk.shiftCost'):'')+'</div>'
+    +grp(CAT.t('pk.letters'),letters)+grp(digLab,digits)+grp(symLab,syms)
+    +`<div class="pgroup"><span class="pglab">${esc(CAT.t('pk.navEdit'))}</span>`
+    +nav.map(([n,c])=>b(n,`pickKey(${c},'${n}')`,'wide')).join('')+'</div>'
+    +`<div class="pgroup"><span class="pglab">${esc(CAT.t('pk.fkeys'))}</span>`
+    +Array.from({length:12},(_,i)=>{const n='F'+(i+13);
+        return b(n,`pickKey(${0x68+i},'${n}')`);}).join('')+'</div>'
+    +`<div class="pgroup"><span class="pglab">${esc(CAT.t('pk.jisKeys'))}</span>`
+    +jis.map(([n,c])=>b(n,`pickKey(${c},'${n}')`,'wide')).join('')+'</div>'
+    +'</div></div>';
+
+  const mouseActions=CAT.mouseActions();
+  const soloNote=`<div class="pnote">${esc(CAT.t('pk.soloNote'))}</div>`;
+  /* Only Ctrl / Shift / Alt fit on the wire for a mouse action, hence naming
+     them rather than saying "修飾". */
+  /* How the user learns the modifier row reaches mouse actions at all. When
+     something IS armed it names what will be attached instead. */
+  const mouseMod=ARMED.length
+    ? '<div class="pnote">'
+      +CAT.t('pk.mouseArmed',{m:esc(ARMED.map(c=>MODNAMES[c]).join('+'))})
+      +(ARMED.some(c=>!CAT.MOUSE_MOD_OK[c])?CAT.t('pk.mouseArmedDrop'):'')
+      +'</div>'
+    : `<div class="pnote">${CAT.t('pk.mouseHint')}</div>`;
+  /* A rule and a quiet label, not a heading: without one the mouse and media
+     buttons run together as one wall. */
+  const blockLab=x=>`<div class="pblab">${esc(x)}</div>`;
+  const mouseBlock=
+    `<div class="pblock" id="blk_mouse">`+blockLab(CAT.t('pk.mouse'))+`<div class="pgrid">`
+    +soloNote+mouseMod
+    +mouseActions.map(a=>b(a.label,`pickSpecial('mouse','${a.name}')`,'wide')).join('')
+    +'</div></div>';
+  const mediaBlock=
+    `<div class="pblock" id="blk_media">`+blockLab(CAT.t('pk.media'))+`<div class="pgrid">`
+    +soloNote
+    +CAT.mediaList().map(m=>b(m.label,`pickSpecial('media','${m.name}')`,'wide')).join('')
+    +'</div></div>';
+
+  B.innerHTML=keyBlock+mouseBlock+mediaBlock;
+  B.onclick=pgridClick;
+}
+
+/* Both picker paths funnel through insertChip, so the fusion rule, dedup
+   guards, standalone constraint and undo apply identically to the picker,
+   to typing and to paste. */
+function pickKey(code,label,mods){
+  // a pending 「一覧から選び直す」 replaces the key in place, keeping mods+ms
+  // (the chip's OWN mods win there by spec 9, so `mods` is an insert-only hint)
+  if(POP_RESELECT>=0 && applyReselect('key',code,label)){
+    takeArmed(); afterPick(); return;
+  }
+  POP_RESELECT=-1;                      // a dead index must never linger
+  /* Whatever is armed applies to this pick and is then consumed. Armed
+     modifiers merge: Ctrl armed + Shift picked gives Ctrl+Shift. */
+  const armed=isMod(code)?[]:takeArmed();
+  const row={kind:'key',code,label,ms:0,
+             mods:sortMods([...new Set([...(mods||[]),...armed])])};
+  if(hasSel()) replaceSelection(row); else insertChip(row,CARET);
+  afterPick();
+}
+/* 文字・数字 tab: the button knows only the GLYPH. charToRow() is the single
+   place that turns a glyph into {code,mods} via META.chars, so the JIS layout
+   wins (`[` -> 0x30). Ends in pickKey -> insertChip. */
+function pickChar(ch){
+  const r=charToRow(ch);
+  if(!r){ toast(CAT.t('toast.badChar',{c:ch})); return; }
+  pickKey(r.code,ch,r.mods);
+}
+function pickSpecial(kind,name){
+  /* A mouse action is three wire fields (button, wheel, modifier), not one
+     code, so the chip carries the whole action. */
+  if(kind==='mouse'){
+    const a=CAT.MOUSE_ACTION_BY_NAME[String(name).toLowerCase()];
+    if(!a) return pickSpecialNamed(kind,name);
+    /* Where an armed modifier ends up is decided here, when the binding is
+       built: the mod byte on a mouse action, an inline code on a keyboard
+       key. Only ONE of Ctrl/Shift/Alt fits in that byte, so say what could
+       not be carried rather than dropping it quietly. */
+    const r=CAT.armMouse(a,ARMED);
+    if(r.dropped.length){
+      toast(CAT.t('toast.mouseModOne',
+            {d:r.dropped.map(c=>MODNAMES[c]).join(', ')}));
+      return;
+    }
+    takeArmed();          // consumed by this pick, exactly like a key pick
+    return pickMouse(r.action);
+  }
+  return pickSpecialNamed(kind,name);
+}
+function pickMouse(a){
+  if(ARMED.length){
+    toast(CAT.t('toast.mouseNoMods'));
+    return;
+  }
+  POP_RESELECT=-1;
+  insertChip({kind:'mouse',code:a.buttons,label:a.label,ms:0,
+              mouse:{buttons:a.buttons,wheel:a.wheel,mod:a.mod}});
+  afterPick();
+}
+function pickSpecialNamed(kind,label){
+  /* Media has nowhere to put a modifier -- the usage IS the whole binding --
+     so refuse rather than silently drop an armed Ctrl. */
+  if(ARMED.length){
+    toast(CAT.t('toast.mediaNoMods'));
+    return;
+  }
+  if(POP_RESELECT>=0 && applyReselect(kind,0,label)){
+    afterPick(); return;
+  }
+  POP_RESELECT=-1;
+  /* Resolve to the real usage and display name here, or a media chip reads
+     "BassUp" while the button that made it says 低音＋. */
+  const code=kind==='media' ? (CAT.MEDIA_BY_NAME[String(label).toLowerCase()]||0) : 0;
+  const shown=kind==='media' && code ? CAT.mediaLabel(code) : label;
+  insertChip({kind,code,label:shown,ms:0});
+  afterPick();
+}
+/* the panel stays open: a pick clears the search box and returns the caret
+   to the strip */
+function afterPick(){
+  POP_RESELECT=-1;
+  $('#psearch').value=''; CANDS=[]; CSEL=0; renderCands('');
+  renderBlocks();          // a special chip dims the keyboard block, and back
+  syncPickerHead();
+  focusStrip();
+}
+
+/* 他のキーへコピー (spec 11). Picks a target (+layer) and writes the SAME
+   spec/delays there over the existing path -- no new wire format, no new
+   insertion path.
+
+   copyToPayload() is split out so the payload can be inspected without
+   firing anything at the device. */
+let CP_TARGET=null, CP_LAYER=1;
+
+function copyTargets(){
+  return (META.targets||[]).map(t=>typeof t==='string'?t:t.name);
+}
+function copyToPayload(target,layer){
+  return {target,layer,spec:seqToSpec(),
+          delays:flatten().map(s=>s.ms||0),delay:0};
+}
+window.copyToPayload=copyToPayload;
+
+function openCopyTo(){
+  const v=validateSeq();
+  if(!v.ok){ msg(v.why,'err'); return; }
+  closeChipPopover();
+  CP_TARGET=null; CP_LAYER=LAYER;
+  $('#cpFrom').textContent=CAT.t('cp.from',{k:SEL,L:LAYER});
+  /* Show what the key will do, in the same words the chips use -- not the
+     wire encoding. */
+  const waits=flatten().filter(x=>x.ms>0).length;
+  $('#cpPrev').textContent=SEQ.map(chipText).join(' \u2192 ')
+    +(waits?CAT.t('cp.waits',{n:waits}):'');
+  drawCopyTo();
+  $('#cp').classList.add('open');
+}
+function closeCopyTo(){ const e=$('#cp'); if(e) e.classList.remove('open');
+  CP_TARGET=null; }
+function drawCopyTo(){
+  $('#cpLayers').innerHTML=[1,2,3].map(n=>
+    `<button class="${n===CP_LAYER?'on':''}" onclick="setCopyLayer(${n})">`
+    +esc(CAT.t('pad.layer',{n}))+'</button>').join('');
+  const mine=(n)=>n===SEL&&CP_LAYER===LAYER;
+  $('#cpTargets').innerHTML=copyTargets().map(n=>
+    `<button class="${n===CP_TARGET?'on':''}" ${mine(n)?'disabled':''}`
+    +` data-testid="cptarget" onclick="setCopyTarget('${n}')"`
+    +` title="${esc(n)}">${esc(n)}</button>`).join('');
+  const go=$('#cpGo'); if(go) go.disabled=!CP_TARGET;
+  $('#cpNote').textContent=CP_TARGET
+    ? CAT.t('cp.targetIs',{k:CP_TARGET,L:CP_LAYER})
+    : CAT.t('cp.pickTarget');
+}
+function setCopyLayer(n){ CP_LAYER=n;
+  if(CP_TARGET===SEL&&n===LAYER) CP_TARGET=null;
+  drawCopyTo(); }
+function setCopyTarget(n){ CP_TARGET=n; drawCopyTo(); }
+function doCopyTo(){
+  if(!CP_TARGET) return;
+  const v=validateSeq();
+  if(!v.ok){ msg(v.why,'err'); return; }
+  try{
+    setDraft(MODEL.withBinding(DRAFT,seqToBinding(CP_TARGET,CP_LAYER)));
+    msg(CAT.t('msg.copiedTo',{k:CP_TARGET,L:CP_LAYER}),'ok');
+    closeCopyTo();
+  }catch(e){ msg(e.message,'err'); }
+}
+
+/* saving. The chips become a binding object, not a string: flatten() already
+   produces the wire order. seqToSpec survives only for the hex preview, which
+   is a debug aid. */
+function seqToSpec(){
+  if(!SEQ.length) return '';
+  if(SEQ[0].kind!=='key') return SEQ[0].label;
+  return flatten().map(s=>'0x'+s.code.toString(16)).join('+');
+}
+/** The chips as the driver wants them: numeric key id, kind, codes, delays. */
+function seqToBinding(targetName,layer){
+  const keyId=CAT.nameToKeyId(targetName);
+  if(keyId===null) throw new Error('unknown target: '+targetName);
+  const head=SEQ[0];
+  if(head&&head.kind==='mouse'){
+    /* The chip carries the three wire fields directly, so nothing has to
+       guess the wheel from label text that translation changes. */
+    const m=head.mouse
+      || CAT.MOUSE_ACTION_BY_NAME[String(head.label||'').toLowerCase()]
+      || {buttons:head.code||0, wheel:0, mod:0};
+    return {keyId,layer,kind:CAT.KIND_MOUSE,codes:[],delays:[],
+            mouse:{mod:m.mod|0,buttons:m.buttons|0,wheel:m.wheel|0}};
+  }
+  if(head&&head.kind==='media'){
+    const code=head.code||CAT.MEDIA_BY_NAME[(head.label||'').toLowerCase()]||0;
+    return {keyId,layer,kind:CAT.KIND_MEDIA,codes:[code],delays:[0]};
+  }
+  const flat=flatten();
+  return {keyId,layer,kind:CAT.KIND_KEYBOARD,
+          codes:flat.map(x=>x.code), delays:flat.map(x=>x.ms||0)};
+}
+/* An edit lands in the draft, not on the pad: nothing here reaches hardware,
+   so no device need be present. */
+function saveSeq(){
+  const v=validateSeq();
+  if(!v.ok) return msg(v.why,'err');
+  try{
+    setDraft(MODEL.withBinding(DRAFT,seqToBinding(SEL,LAYER)));
+    msg(CAT.t('msg.savedKey',{k:SEL}),'ok');
+    closeEditor();
+  }catch(e){ msg(e.message,'err'); }
+}
+
+/* LED */
+const curMode=()=>META&&META.modes.find(x=>x.n==+$('#ledMode').value);
+/* By mode number, not by what the dropdown shows: the write diff covers all
+   three layers and two are not on screen. */
+const modeTraits=n=>META&&META.modes.find(x=>x.n===(n|0));
+/* The bar says which mode, what it does, and the 12 colours, so closing it
+   is not a loss. `perKey` comes from LED_MODE_TRAITS: a mode that ignores the
+   palette greys the strip rather than hiding it. */
+function syncLedBar(){
+  const m=curMode(), a=$('#ledarea');
+  if(!a) return;
+  a.dataset.mode = m?m.n:0;
+  a.dataset.perkey = (!m||m.perKey)?'1':'0';
+  $('#barName').textContent = m?m.label:'';
+  $('#barWhy').textContent  = m?m.help:'';
+  $('#barStrip').innerHTML = COLORS.slice(0,12).map(c=>
+    `<i style="background:${c||'#000000'}"></i>`).join('');
+  /* Dim is the look; disabled is the behaviour. pointer-events:none stops the
+     mouse but not the keyboard, and a tab-focused colour input would still
+     stage a colour the pad throws away. */
+  const noCol = !!(m && !m.perKey);
+  $('#ledWhy').textContent = noCol ? (m.noColor||'') : '';
+  $('#ledColors').querySelectorAll('input,button').forEach(el=>{
+    el.disabled = noCol; });
+  /* The pad shows the mode, not just the colours -- see the CSS. The flag on
+     .device is separate from the mode number so the case does not repeat the
+     catalog's list of animated modes. */
+  const K=$('#keys'); if(K) K.dataset.mode = m?m.n:0;
+  $('.device').classList.toggle('animated', !!(m&&m.animated));
+  syncPadHint();
+  syncLedTarget();
+}
+/* Which keys the next swatch click paints. Reads SEL, the same selection the
+   pad and the editor use. */
+function syncLedTarget(){
+  const t=$('#ledTarget'); if(!t) return;
+  const m=SEL&&SEL.match(/^key(\d+)$/);
+  if(m){
+    const e=byName(SEL), lab=e&&e.label!=='NULL'?e.label:'';
+    t.innerHTML=CAT.t('led.targetOne',
+      {n:+m[1], q:lab?' \u201c'+esc(lab)+'\u201d':''});
+  }else{
+    t.innerHTML=CAT.t('led.targetAll');
+  }
+}
+/* Open/closed is a standing preference. Storage access itself throws when the
+   browser has site data switched off, so both directions are guarded. */
+const LED_OPEN_KEY='macropad.ledOpen';
+function ledAreaOpen(open){
+  applyLedOpen(open);
+  try{ localStorage.setItem(LED_OPEN_KEY,open?'1':'0'); }catch{ /* no store */ }
+}
+/* Two things speak through the one line under the pad: what a key click does,
+   and how to preview the light. Both callers go through here or whoever wrote
+   last wins. Click meaning comes first. */
+function syncPadHint(){
+  const open=$('#ledarea').classList.contains('open'), m=curMode();
+  $('#padHint').textContent = open
+    ? CAT.t('pad.hintPaint')
+    : (m&&(m.n===2||m.n===3)) ? CAT.t('pad.hintHover') : CAT.t('pad.hint');
+}
+/* A key click means two different things depending on this, so the hint must
+   say which is live -- otherwise opening the palette silently rewires the
+   pad. */
+function applyLedOpen(open){
+  $('#ledarea').classList.toggle('open',open);
+  $('#ledbar').setAttribute('aria-expanded',open?'true':'false');
+  syncPadHint();
+  if(!open&&SEL&&/^key\d+$/.test(SEL)&&!$('#ov').classList.contains('open')){
+    SEL=null; render();               // a paint target outlives nothing
+  }
+  syncLedTarget();
+}
+function toggleLedArea(){ ledAreaOpen(!$('#ledarea').classList.contains('open')); }
+function restoreLedArea(){
+  let v=null;
+  try{ v=localStorage.getItem(LED_OPEN_KEY); }catch{ /* no store */ }
+  applyLedOpen(v==='1');
+}
+/* Colour edits go into the draft like any other edit, so they survive a
+   reload and are visible to the write button. */
+function commitColors(){
+  const mode=+$('#ledMode').value, t=modeTraits(mode);
+  /* Switching into a mode that ignores colour must NOT restage the colours:
+     the pad keeps reporting whatever was last written to it, so a different
+     set here leaves draft and device permanently unequal and the write button
+     lit for a change no write can settle. COLORS is untouched, so the palette
+     returns intact when a colour mode is chosen again. */
+  const keep = t && !t.perKey && DEVICE && DEVICE.leds && DEVICE.leds[LAYER];
+  setDraft(MODEL.withLeds(DRAFT,LAYER,mode,
+    keep ? keep.colors.slice(0,12) : COLORS.slice(0,12)));
+}
+/* The gate, in one place. The swatches are <i> elements with inline handlers,
+   so `disabled` does not apply and CSS pointer-events is only a look. */
+function colorsUsed(){ const m=curMode(); return !m || m.perKey; }
+function useSwatch(hex){
+  if(!colorsUsed()) return;
+  const m=SEL&&SEL.match(/^key(\d+)$/);
+  if(m)COLORS[+m[1]-1]=hex;
+  else for(let i=0;i<12;i++)COLORS[i]=hex;
+  $('#ledAll').value=hex; commitColors();
+}
+function applyAll(){if(!colorsUsed())return;const c=$('#ledAll').value;
+  for(let i=0;i<12;i++)COLORS[i]=c;commitColors();}
+/* The LED mode is in the same record as the colours, so changing it is an
+   edit, not just a help-text change. */
+function onLedMode(){ commitColors(); }   // commitColors -> refresh -> syncLedBar
+/* Aim the palette at one key, using the same SEL the editor and pad read.
+   Clicking the selected key again aims back at all twelve. */
+function pickForPaint(n){
+  SEL = SEL===n ? null : n;
+  render(); syncLedTarget();
+}
+/* writing. One button, at the end, for everything: the diff is the work list
+   and it is written in one run. The run is shown first, because it is the
+   only irreversible thing on the page. */
+function openWrite(){
+  /* Recompute rather than trust the cached PENDING: this is the one place
+     where being wrong writes to hardware. */
+  PENDING = DRAFT ? MODEL.diff(DRAFT,DEVICE) : {count:0,bindings:[],leds:[]};
+  if(!PAD){ msg(CAT.t('msg.noDevice'),'err'); return; }
+  const d=PENDING;
+  if(!d.count){ msg(CAT.t('msg.sameAsDevice'),'ok'); return; }
+  $('#wrSub').textContent=CAT.t('wr.sub',{n:d.count});
+  $('#wrList').innerHTML=describeDiff(d);
+  /* The device needs WRITE_GAP + COMMIT_GAP per item; a user told nothing
+     pulls the cable. */
+  const secs=Math.ceil(d.count*1.1);
+  $('#wrNote').textContent=CAT.t('wr.note',{s:secs});
+  $('#wrGo').disabled=false;
+  $('#wr').classList.add('open');
+}
+function closeWrite(){ $('#wr').classList.remove('open'); }
+function writeAll(){ openWrite(); }
+/** The work list in words -- a count alone does not say whether this is what
+ *  the user meant. */
+function describeDiff(d){
+  const out=[];
+  for(const b of d.bindings){
+    const name=CAT.keyIdToName(b.keyId);
+    const cur=(b.binding.codes||[]).length||b.binding.mouse
+      ? describe(b.binding.kind,b.binding.codes||[],b.binding.mouse)
+      : CAT.t('wr.none');
+    out.push('<div>'+CAT.t('wr.diffRow',
+      {L:b.layer,k:esc(name),v:esc(cur)})+'</div>');
+  }
+  /* A mode that ignores the palette still sends colours -- writeLeds carries
+     mode and colours in one packet -- but sends them unchanged, staged from
+     the device by commitColors. So the line says the colours stay as they
+     are, not that they are withheld. */
+  for(const L of d.leds){
+    const md=DRAFT&&DRAFT.leds&&DRAFT.leds[L], t=md&&modeTraits(md.mode);
+    if(t&&!t.perKey){
+      out.push('<div>'+CAT.t('wr.ledModeOnly',{L})+'</div>'
+        +`<div class="quiet">${esc(CAT.t('wr.ledModeOnlyNote'))}</div>`);
+    }else out.push('<div>'+CAT.t('wr.ledBoth',{L})+'</div>');
+  }
+  return out.join('');
+}
+async function doWrite(){
+  const d=PENDING;
+  if(!PAD||!d.count) return closeWrite();
+  $('#wrGo').disabled=true;
+  let done=0;
+  /* A write takes seconds and re-reads the pad at the end. A connect or
+     reload landing mid-write would reconcile against a half-written pad and
+     could raise a conflict dialog. Hold the same flag a read holds. */
+  WRITING=true; READING=true; publish();
+  try{
+    for(const b of d.bindings){
+      $('#wrSub').textContent=CAT.t('wr.progress',{i:done+1,n:d.count});
+      await PAD.writeBinding({...b.binding,layer:b.layer});
+      done++;
+    }
+    for(const L of d.leds){
+      $('#wrSub').textContent=CAT.t('wr.progress',{i:done+1,n:d.count});
+      const led=DRAFT.leds[L]||{mode:0,colors:[]};
+      const rgb=Array.from({length:16},(_,i)=>fromHex(led.colors[i]||'#000000'));
+      await PAD.writeLeds(L,led.mode|0,rgb);
+      done++;
+    }
+    closeWrite();
+    /* Read the pad back rather than assume the write took, so the button
+       lights again for exactly what is missing.
+
+       The read cannot follow the last commit immediately. Measured on the
+       device: a read issued right after the final COMMIT_GAP still answers
+       with the pre-write values, so a correct write reads as "not
+       reflected". Let it settle, then read. */
+    $('#wrSub').textContent=CAT.t('wr.verifying');
+    await D_SLEEP(SETTLE_AFTER_WRITE);
+    DEVICE=MODEL.toPlain(await PAD.readAll());
+    refresh();
+    msg(PENDING.count
+      ? CAT.t('wr.partial',{n:done,p:PENDING.count})
+      : CAT.t('wr.done',{n:done}), PENDING.count?'err':'ok');
+  }catch(e){
+    closeWrite();
+    /* A failed run leaves the pad half-written, so re-read the baseline and
+       let the diff say what is left. */
+    try{ DEVICE=MODEL.toPlain(await PAD.readAll()); }catch{ DEVICE=null; }
+    refresh();
+    msg(CAT.t('wr.failed',{n:done,e:e.message}),'err');
+  }finally{
+    /* refresh() ran in both paths with the flags still set, so the button
+       shows "reading". Clear them and redraw once more. */
+    WRITING=false; READING=false; refresh();
+  }
+}
+/** Throw away the design and take what the pad holds. */
+function revertToDevice(){
+  if(!DEVICE){ msg(CAT.t('msg.notRead'),'err'); return; }
+  setDraft(MODEL.cloneConfig(DEVICE));
+  msg(CAT.t('msg.reverted'),'ok');
+}
+
+/* the connect-time conflict */
+function openConflict(d){
+  $('#cfList').innerHTML='<div>'+CAT.t('cf.count',{n:d.count})+'</div>'
+    +describeDiff(d);
+  $('#cf').classList.add('open');
+}
+function resolveConflict(which){
+  $('#cf').classList.remove('open');
+  if(which==='device'){
+    setDraft(MODEL.cloneConfig(DEVICE));
+    msg(CAT.t('msg.loaded'),'ok');
+  }else{
+    refresh();
+    msg(CAT.t('msg.keptDraft'),'ok');
+  }
+}
+
+/* export and import. Two exports, because "save what I have" can mean the
+   design on screen or the pad's actual contents, and they may differ. */
+function toggleMenu(e){
+  const m=e.currentTarget.parentElement;
+  m.classList.toggle('open');
+  /* Registered after this click, or the click that opened it closes it. */
+  if(m.classList.contains('open')){
+    setTimeout(()=>document.addEventListener('click',
+      function off(){ m.classList.remove('open');
+        document.removeEventListener('click',off); },{once:true}),0);
+  }
+}
+function download(obj,name){
+  const blob=new Blob([JSON.stringify(obj,null,1)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name;
+  a.click(); URL.revokeObjectURL(a.href);
+}
+/* Down to the second: two exports within a minute would otherwise share a
+   filename, which the browser resolves by silently appending (1). */
+function stamp(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}`
+        +`-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+function exportApp(){
+  if(!DRAFT) return msg(CAT.t('msg.nothingToSave'),'err');
+  download(MODEL.toExport(DRAFT,'app',{at:new Date().toISOString()}),
+           `macropad-app-${stamp()}.json`);
+  msg(CAT.t('msg.exportedApp'),'ok');
+}
+/** The pad's own contents, read fresh -- not the baseline, which could be
+ *  minutes old. */
+async function exportDevice(){
+  if(!PAD) return msg(CAT.t('msg.noDevice'),'err');
+  try{
+    msg(CAT.t('msg.readingDevice'),'');
+    const cfg=MODEL.toPlain(await PAD.readAll());
+    DEVICE=cfg; syncWrite();
+    download(MODEL.toExport(cfg,'device',
+      {at:new Date().toISOString(),device:PAD.name}),
+      `macropad-device-${stamp()}.json`);
+    msg(CAT.t('msg.exportedDevice'),'ok');
+  }catch(e){ msg(CAT.t('msg.readFail',{e:e.message}),'err'); }
+}
+async function importFile(e){
+  const f=e.target.files&&e.target.files[0];
+  e.target.value='';                       // so the same file can be picked twice
+  if(!f) return;
+  try{
+    const r=MODEL.fromExport(JSON.parse(await f.text()));
+    if(!r.ok) return msg(r.why,'err');
+    setDraft(r.config);
+    msg(CAT.t(PAD?'msg.importedWrite':'msg.imported'),'ok');
+  }catch(err){ msg(CAT.t('msg.importFail',{e:err.message}),'err'); }
+}
+$('#ov').onclick=e=>{if(e.target.id==='ov')closeEditor();};
+$('#cp').onclick=e=>{if(e.target.id==='cp')closeCopyTo();};
+$('#wr').onclick=e=>{if(e.target.id==='wr')closeWrite();};
+/* The conflict dialog deliberately has no click-outside and no cancel:
+   dismissing it would leave the page in neither state. */
+/* A reminder, not a guard: the design is in localStorage either way. */
+window.addEventListener('beforeunload',e=>{
+  if(PENDING&&PENDING.count&&PAD){ e.preventDefault(); e.returnValue=''; }
+});
+/* boot() is async and nothing awaits it, so a throw inside would vanish
+   silently and the page would just look slow. */
+boot().catch(e=>{
+  console.error('boot failed', e);
+  msg(CAT.t('msg.startFail',{e:e.message}),'err');
+});
+</script>
+</body>
+</html>
