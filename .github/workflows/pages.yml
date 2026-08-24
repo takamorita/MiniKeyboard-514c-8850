@@ -1,23 +1,15 @@
-# Publish the page to GitHub Pages.
-#
-# There is no build. The browser reads ui.html and pulls its modules in with
-# import(), which is all a static host has to serve -- so the job copies files
-# and stops. Anything that once bundled them into one has been deleted.
 name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [master]
-  workflow_dispatch:      # lets you redeploy from the Actions tab by hand
+    branches: [main]
+  workflow_dispatch:
 
-# GITHUB_TOKEN needs to be allowed to publish the artifact.
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Never let two deploys race; keep the newer one, let the older finish first
-# rather than cancelling a publish half-way.
 concurrency:
   group: pages
   cancel-in-progress: false
