@@ -489,7 +489,7 @@
 <body>
 <header>
   <h1>MiniKeyboard</h1>
-  <span id="ver" class="hint" style="font-size:11px"></span>
+  <span id="ver" class="hint" style="font-size:11px" data-v="2026-08-25"></span>
   <div style="display:flex;gap:6px" id="layerBtns"></div>
   <div class="grow"></div>
   <button id="connectBtn" onclick="connectDevice()" data-i18n="btn.connect"></button>
@@ -910,7 +910,7 @@ async function boot(){
          modes:CAT.ledModeList(), swatches:CAT.VENDOR_PALETTE,
          wireless:CAT.wirelessNote(), max_codes:CAT.MAX_CODES,
          targets:CAT.allTargets().map(t=>t.name) };
-  const vs=$('#ver'); if(vs) vs.textContent='build '+(vs.dataset.v||'?');
+  const vs=$('#ver'); if(vs) vs.textContent=vs.dataset.v||'';
   META.modes.forEach(m=>$('#ledMode').add(new Option(m.n+' — '+(m.label||m.name),m.n)));
   $('#layerBtns').innerHTML=[1,2,3].map(n=>
     `<button id="lb${n}" onclick="setLayer(${n})">${esc(CAT.t('pad.layer',{n}))}</button>`).join('');
